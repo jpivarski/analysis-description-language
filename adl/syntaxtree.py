@@ -69,7 +69,10 @@ class Call(AST):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.function), repr(self.arguments))
 
 class Assign(AST):
-    def __init__(self, target, expr, source=None, lineno=None, col_offset=None):
+    def __init__(self, target, expression, source=None, lineno=None, col_offset=None):
         super(Assign, self).__init__(source=source, lineno=lineno, col_offset=col_offset)
         self.target = target
-        self.expr = expr
+        self.expression = expression
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.target), repr(self.expression))

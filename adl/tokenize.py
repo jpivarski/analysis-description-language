@@ -11,10 +11,11 @@ class ADLLexer(object):
                 "not": "NOT"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
+              "COLONEQ", "END",
               "OR", "AND", "NOT",
               "EQEQUAL", "NOTEQUAL",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
-              "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "DOT", "COMMA",
+              "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",
               "NEWLINE"]
 
     def t_MULTILINESTRING(self, t):
@@ -43,6 +44,7 @@ class ADLLexer(object):
         t.value = t.value
         return t
 
+    t_COLONEQ      = r":="
     t_OR           = r"or"
     t_AND          = r"and"
     t_NOT          = r"not"
@@ -58,6 +60,8 @@ class ADLLexer(object):
     t_CLOSEPAREN   = r"\)"
     t_OPENBRACKET  = r"\["
     t_CLOSEBRACKET = r"\]"
+    t_OPENCURLY    = r"\{"
+    t_CLOSECURLY   = r"\}"
     t_DOT          = r"\."
     t_COMMA        = r","
 
@@ -69,6 +73,7 @@ class ADLLexer(object):
         r"\n+"
         t.lexer.lineno += len(t.value)
         t.lexer.linepos = t.lexer.lexpos
+        return t
 
     t_ignore = " \t\f\r"
 

@@ -12,6 +12,36 @@ class ADLParser(object):
                 "lineno": p.lexer.lineno,
                 "col_offset": p.lexer.lexpos - p.lexer.linepos}
 
+    def p_suite_expression(self, p):
+        "suite : expression"
+        #                 1
+        p[0] = [p[1]]
+
+    def p_suite_assignment_single(self, p):
+        "suite : assignment"
+        #                 1
+        p[0] = [p[1]]
+
+    def p_suite_assignment_extend(self, p):
+        "suite : assignment NEWLINE suite"
+        #                 1       2     3
+        p[0] = [p[1]] + p[3]
+
+    def p_assignment(self, p):
+        "assignment : IDENTIFIER COLONEQ expression"
+        #                      1       2          3
+        p[0] = adl.syntaxtree.Assign(p[1], p[3], **self.pos(p))
+
+    def p_assignment_call_expression(self, p):
+        "assignment : call COLONEQ expression"
+        #                1       2          3
+        p[0] = adl.syntaxtree.Assign(p[1], [p[3]], **self.pos(p))
+
+    def p_assignment_call_suite(self, p):
+        "assignment : call COLONEQ OPENCURLY suite CLOSECURLY"
+        #                1       2         3     4          5
+        p[0] = adl.syntaxtree.Assign(p[1], p[4], **self.pos(p))
+
     def p_expression(self, p):
         "expression : logicalor"
         #                     1
@@ -164,14 +194,19 @@ class ADLParser(object):
         pos = self.pos(p)
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Subscript(**pos), [p[1], p[3]], **pos)
 
-    def p_trailer_arglist(self, p):
-        "trailer : trailer OPENPAREN arglist CLOSEPAREN"
-        #                1         2       3          4
+    def p_trailer_call(self, p):
+        "trailer : call"
+        #             1
+        p[0] = p[1]
+
+    def p_call_arglist(self, p):
+        "call : trailer OPENPAREN arglist CLOSEPAREN"
+        #             1         2       3          4
         p[0] = adl.syntaxtree.Call(p[1], p[3], **self.pos(p))
 
-    def p_trailer_arglist_empty(self, p):
-        "trailer : trailer OPENPAREN CLOSEPAREN"
-        #                1         2          3
+    def p_call_arglist_empty(self, p):
+        "call : trailer OPENPAREN CLOSEPAREN"
+        #             1         2          3
         p[0] = adl.syntaxtree.Call(p[1], [], **self.pos(p))
 
     def p_atom_parens(self, p):
@@ -204,12 +239,12 @@ class ADLParser(object):
         #                1
         p[0] = adl.syntaxtree.Identifier(p[1], **self.pos(p))
 
-    def p_arglist_singleton(self, p):
+    def p_arglist_single(self, p):
         "arglist : expression"
         #                   1
         p[0] = [p[1]]
 
-    def p_arglist_extension(self, p):
+    def p_arglist_extend(self, p):
         "arglist : expression COMMA arglist"
         #                   1     2       3
         p[0] = [p[1]] + p[3]

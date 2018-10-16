@@ -29,26 +29,18 @@ class Special(AST):
 
 class Attribute(Special): pass
 class Subscript(Special): pass
-    
-class Logical(AST): pass
-class Comparison(AST): pass
-class Arithmetic(AST): pass
-class Additive(Arithmetic): pass
-class Multiplicative(Arithmetic): pass
-class UnaryArithmetic(Arithmetic): pass
-
-class Or(Logical, LeftRight): pass
-class And(Logical, LeftRight): pass
-class Not(Logical, Right): pass
-class IsEqual(Comparison, LeftRight): pass
-class IsNotEqual(Comparison, LeftRight): pass
-class Plus(Additive, LeftRight): pass
-class Minus(Additive, LeftRight): pass
-class Times(Multiplicative, LeftRight): pass
-class Div(Multiplicative, LeftRight): pass
-class UnaryPlus(UnaryArithmetic, Right): pass
-class UnaryMinus(UnaryArithmetic, Right): pass
-class Power(Arithmetic, LeftRight): pass
+class Or(Special): pass
+class And(Special): pass
+class Not(Special): pass
+class IsEqual(Special): pass
+class IsNotEqual(Special): pass
+class Plus(Special): pass
+class Minus(Special): pass
+class Times(Special): pass
+class Div(Special): pass
+class UnaryPlus(Special): pass
+class UnaryMinus(Special): pass
+class Power(Special): pass
 
 class Literal(AST):
     def __init__(self, value, source=None, lineno=None, col_offset=None):

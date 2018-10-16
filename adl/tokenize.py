@@ -11,8 +11,8 @@ class ADLLexer(object):
               "OR", "AND", "NOT",
               "EQEQUAL", "NOTEQUAL",
               "PLUS", "MINUS", "TIMES", "DIV", "POWER",
-              "OPENPAREN", "CLOSEPAREN", "DOT", "COMMA",
-              "NEWLINE", "WHITESPACE"]
+              "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "DOT", "COMMA",
+              "NEWLINE"]
 
     def t_MULTILINESTRING(self, t):
         r'(\'\'\'[^\\]*(\\.[^\\]*)*\'\'\'|"""[^\\]*(\\.[^\\]*)*""")'
@@ -40,20 +40,22 @@ class ADLLexer(object):
         t.value = t.value
         return t
 
-    t_OR         = r"or"
-    t_AND        = r"and"
-    t_NOT        = r"not"
-    t_EQEQUAL    = r"=="
-    t_NOTEQUAL   = r"!="
-    t_PLUS       = r"\+"
-    t_MINUS      = r"-"
-    t_TIMES      = r"\*"
-    t_DIV        = r"/"
-    t_POWER      = r"\*\*"
-    t_OPENPAREN  = r"\("
-    t_CLOSEPAREN = r"\)"
-    t_DOT        = r"\."
-    t_COMMA      = r","
+    t_OR           = r"or"
+    t_AND          = r"and"
+    t_NOT          = r"not"
+    t_EQEQUAL      = r"=="
+    t_NOTEQUAL     = r"!="
+    t_PLUS         = r"\+"
+    t_MINUS        = r"-"
+    t_TIMES        = r"\*"
+    t_DIV          = r"/"
+    t_POWER        = r"\*\*"
+    t_OPENPAREN    = r"\("
+    t_CLOSEPAREN   = r"\)"
+    t_OPENBRACKET  = r"\["
+    t_CLOSEBRACKET = r"\]"
+    t_DOT          = r"\."
+    t_COMMA        = r","
 
     def t_COMMENT(self, t):
         r"\#.*"

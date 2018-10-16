@@ -23,6 +23,13 @@ class Right(AST):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.right))
 
+class Special(AST):
+    def __repr__(self):
+        return "{0}()".format(type(self).__name__)
+
+class Attribute(Special): pass
+class Subscript(Special): pass
+    
 class Logical(AST): pass
 class Comparison(AST): pass
 class Arithmetic(AST): pass

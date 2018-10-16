@@ -23,23 +23,35 @@ class ADLParser(object):
         p[0] = p[1]
 
     def p_expression_3(self, p):
+        "expression : subscript"
+        #                     1
+        p[0] = p[1]
+
+    def p_expression_4(self, p):
         "expression : call"
         #                1
         p[0] = p[1]
 
     def p_attribute(self, p):
-        "attribute : atom DOT IDENTIFIER"
+        "attribute : expression DOT IDENTIFIER"
         #               1   2          3
-        p[0] = adl.syntaxtree.Call(".", [p[1], p[3]])
+        pos = self.pos(p)
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Attribute(**pos), [p[1], adl.syntaxtree.Identifier(p[3])], **pos)
+
+    def p_subscript(self, p):
+        "subscript : expression OPENBRACKET expression CLOSEBRACKET"
+        #                     1           2          3            4
+        pos = self.pos(p)
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Subscript(**pos), [p[1], p[3]], **pos)
 
     def p_call_1(self, p):
-        "call : atom OPENPAREN arglist CLOSEPAREN"
-        #          1         2       3          4
+        "call : expression OPENPAREN arglist CLOSEPAREN"
+        #                1         2       3          4
         p[0] = adl.syntaxtree.Call(p[1], p[3], **self.pos(p))
 
     def p_call_2(self, p):
-        "call : atom OPENPAREN CLOSEPAREN"
-        #          1         2          3
+        "call : expression OPENPAREN CLOSEPAREN"
+        #                1         2          3
         p[0] = adl.syntaxtree.Call(p[1], [], **self.pos(p))
 
     def p_arglist_1(self, p):

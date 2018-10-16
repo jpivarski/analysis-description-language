@@ -59,14 +59,14 @@ class Identifier(AST):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.name))
 
-class Function(AST):
-    def __init__(self, call, args, source=None, lineno=None, col_offset=None):
-        super(Function, self).__init__(source=source, lineno=lineno, col_offset=col_offset)
-        self.call = call
-        self.args = args
+class Call(AST):
+    def __init__(self, function, arguments, source=None, lineno=None, col_offset=None):
+        super(Call, self).__init__(source=source, lineno=lineno, col_offset=col_offset)
+        self.function = function
+        self.arguments = arguments
 
     def __repr__(self):
-        return "{0}({1}, {2})".format(type(self).__name__, repr(self.call), repr(self.args))
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.function), repr(self.arguments))
 
 class Assign(AST):
     def __init__(self, target, expr, source=None, lineno=None, col_offset=None):

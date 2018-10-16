@@ -25,6 +25,7 @@ class Comparison(AST): pass
 class Arithmetic(AST): pass
 class Additive(Arithmetic): pass
 class Multiplicative(Arithmetic): pass
+class UnaryArithmetic(Arithmetic): pass
 
 class Or(Logical, LeftRight): pass
 class And(Logical, LeftRight): pass
@@ -49,8 +50,23 @@ class Literal(AST):
 
 class Identifier(AST):
     def __init__(self, name, lineno=None, col_offset=None):
-        super(Idnetifier, self).__init__(lineno=lineno, col_offset=col_offset)
+        super(Identifier, self).__init__(lineno=lineno, col_offset=col_offset)
         self.name = name
 
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.name))
+
+class Function(AST):
+    def __init__(self, call, args, lineno=None, col_offset=None):
+        super(Function, self).__init__(lineno=lineno, col_offset=col_offset)
+        self.call = call
+        self.args = args
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.call), repr(self.args))
+
+class Assign(AST):
+    def __init__(self, target, expr, lineno=None, col_offset=None):
+        super(Assign, self).__init__(lineno=lineno, col_offset=col_offset)
+        self.target = target
+        self.expr = expr

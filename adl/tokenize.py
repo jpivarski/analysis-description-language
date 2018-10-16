@@ -67,7 +67,7 @@ class ADLLexer(object):
     t_ignore = " \t\f\r"
 
     def t_error(self, t):
-        adl.util.complain(SyntaxError, "illegal character", t.lexer.lexpos, t.lexer)
+        adl.util.complain(SyntaxError, "illegal character", t.lexer.lexdata, t.lexer.lineno, t.lexer.lexpos - t.lexer.linepos)
 
     def build(self, **kwargs):
         self.lexer = ply.lex.lex(module=self, **kwargs)

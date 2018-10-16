@@ -3,6 +3,8 @@ import re
 
 import ply.lex
 
+import adl.util
+
 class ADLLexer(object):
     reserved = {}
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
@@ -60,34 +62,13 @@ class ADLLexer(object):
     def t_NEWLINE(self, t):
         r"\n+"
         t.lexer.lineno += len(t.value)
-        return t
+        t.lexer.linepos = t.lexer.lexpos
 
-    def t_WHITESPACE(self, t):
-        r"[ \t\f\r]+"
-        return t
+    t_ignore = " \t\f\r"
 
     def t_error(self, t):
-        message = "Line {0}: illegal character".format(t.lexer.lineno)
-        quoted = t.lexer.source.split("\n")[t.lexer.lineno - 1]
-        arrow = "-" * (t.lexer.lexpos - t.lexer.linepos + 4) + "^"
-        # report the line number, quote the line, and put a cool arrow under it specifying the position
-        raise SyntaxError(message + "\n    " + quoted + "\n" + arrow)
+        adl.util.complain(SyntaxError, "illegal character", t.lexer.lexpos, t.lexer)
 
     def build(self, **kwargs):
         self.lexer = ply.lex.lex(module=self, **kwargs)
         self.lexer.linepos = 0
-
-# class LexerWithLineNumbers(ply.lex.Lexer):
-#     def __iter__(self):
-#         self.linepos = 0
-
-#         iterator = super(LexerWithLineNumbers, self).__iter__()
-#         while True:
-#             token = next(iterator)
-#             if not token:
-#                 break
-#             if token.type == "NEWLINE":
-#                 self.linepos = self.lexpos
-#             token.col_offset = self.lexpos - self.linepos
-#             if token.type != "WHITESPACE" and token.type != "NEWLINE":
-#                 yield token

@@ -6,11 +6,14 @@ import ply.lex
 import adl.util
 
 class ADLLexer(object):
-    reserved = {}
+    reserved = {"and": "AND",
+                "or": "OR",
+                "not": "NOT"}
+
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "OR", "AND", "NOT",
               "EQEQUAL", "NOTEQUAL",
-              "PLUS", "MINUS", "TIMES", "DIV", "POWER",
+              "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "DOT", "COMMA",
               "NEWLINE"]
 
@@ -49,6 +52,7 @@ class ADLLexer(object):
     t_MINUS        = r"-"
     t_TIMES        = r"\*"
     t_DIV          = r"/"
+    t_MOD          = r"%"
     t_POWER        = r"\*\*"
     t_OPENPAREN    = r"\("
     t_CLOSEPAREN   = r"\)"

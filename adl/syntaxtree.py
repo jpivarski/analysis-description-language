@@ -33,11 +33,12 @@ class Or(Special): pass
 class And(Special): pass
 class Not(Special): pass
 class IsEqual(Special): pass
-class IsNotEqual(Special): pass
+class NotEqual(Special): pass
 class Plus(Special): pass
 class Minus(Special): pass
 class Times(Special): pass
 class Div(Special): pass
+class Mod(Special): pass
 class UnaryPlus(Special): pass
 class UnaryMinus(Special): pass
 class Power(Special): pass

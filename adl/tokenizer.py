@@ -3,7 +3,7 @@ import re
 
 import ply.lex
 
-import adl.util
+import adl.error
 
 class ADLLexer(object):
     reserved = {"and": "AND",
@@ -77,7 +77,7 @@ class ADLLexer(object):
     t_ignore = " \t\f\r"
 
     def t_error(self, t):
-        raise adl.util.ADLSyntaxError("illegal character", t.lexer.lexdata, len(t.lexer.linepos), t.lexer.lexpos - t.lexer.linepos[-1])
+        raise adl.error.ADLSyntaxError("illegal character", t.lexer.lexdata, len(t.lexer.linepos), t.lexer.lexpos - t.lexer.linepos[-1])
 
     def build(self, **kwargs):
         self.lexer = ply.lex.lex(module=self, **kwargs)

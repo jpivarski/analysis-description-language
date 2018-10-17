@@ -1,5 +1,3 @@
-import adl.util
-
 class AST(object):
     def __init__(self, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         self.source = source

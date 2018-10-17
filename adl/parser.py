@@ -2,7 +2,7 @@ import ply.yacc
 
 import adl.syntaxtree
 import adl.tokenize
-import adl.util
+import adl.error
 
 class ADLParser(object):
     tokens = adl.tokenize.ADLLexer.tokens
@@ -47,7 +47,7 @@ class ADLParser(object):
         if "\n" in p[1].source[p[1].rightmost().lexspan[1]:p[2][0].leftmost().lexspan[0]]:
             p[0] = [p[1]] + p[2]
         else:
-            raise adl.util.ADLSyntaxError("missing semicolon or newline", p[1].source, p[2][0].leftmost().lineno, p[2][0].leftmost().col_offset)
+            raise adl.error.ADLSyntaxError("missing semicolon or newline", p[1].source, p[2][0].leftmost().lineno, p[2][0].leftmost().col_offset)
 
     def p_body_assignment_extend_semi(self, p):
         "body : assignment SEMICOLON body"
@@ -267,7 +267,7 @@ class ADLParser(object):
         p[0] = [p[1]]
 
     def p_error(self, p):
-        raise adl.util.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
+        raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 
     def build(self, **kwargs):
         self.parser = ply.yacc.yacc(module=self, **kwargs)

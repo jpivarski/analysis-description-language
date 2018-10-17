@@ -11,12 +11,12 @@ class ADLLexer(object):
                 "not": "NOT"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
-              "COLONEQ", "END",
+              "COLONEQ",
               "OR", "AND", "NOT",
               "EQEQUAL", "NOTEQUAL",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",
-              "NEWLINE"]
+              "SEMICOLON"]
 
     def t_MULTILINESTRING(self, t):
         r'(\'\'\'[^\\]*(\\.[^\\]*)*\'\'\'|"""[^\\]*(\\.[^\\]*)*""")'
@@ -64,6 +64,7 @@ class ADLLexer(object):
     t_CLOSECURLY   = r"\}"
     t_DOT          = r"\."
     t_COMMA        = r","
+    t_SEMICOLON    = r";"
 
     def t_COMMENT(self, t):
         r"\#.*"
@@ -71,15 +72,13 @@ class ADLLexer(object):
 
     def t_NEWLINE(self, t):
         r"\n+"
-        t.lexer.lineno += len(t.value)
-        t.lexer.linepos = t.lexer.lexpos
-        return t
+        t.lexer.linepos.extend([t.lexer.lexpos] * len(t.value))
 
     t_ignore = " \t\f\r"
 
     def t_error(self, t):
-        adl.util.complain(SyntaxError, "illegal character", t.lexer.lexdata, t.lexer.lineno, t.lexer.lexpos - t.lexer.linepos)
+        raise adl.util.ADLSyntaxError("illegal character", t.lexer.lexdata, len(t.lexer.linepos), t.lexer.lexpos - t.lexer.linepos[-1])
 
     def build(self, **kwargs):
         self.lexer = ply.lex.lex(module=self, **kwargs)
-        self.lexer.linepos = 0
+        self.lexer.linepos = [0]

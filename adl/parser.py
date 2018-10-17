@@ -45,6 +45,16 @@ class ADLParser(object):
         #           1
         p[0] = p[1]
 
+    def p_sources(self, p):
+        "sources : SOURCES stringlist OPENCURLY block CLOSECURLY"
+        #                1          2         3     4          5
+        p[0] = adl.syntaxtree.Sources(p[2], p[4], inclusive=True, **self.pos(p, 1))
+
+    def p_notsources(self, p):
+        "notsources : NOT SOURCES stringlist OPENCURLY block CLOSECURLY"
+        #               1       2          3         4     5          6
+        p[0] = adl.syntaxtree.Sources(p[3], p[5], inclusive=False, **self.pos(p, 2))
+
     def p_regions(self, p):
         "regions : REGIONS string axis OPENCURLY block CLOSECURLY"
         #                1      2    3         4     5          6
@@ -87,6 +97,26 @@ class ADLParser(object):
         #                                  1         2          3
         p[1].assignments.append(p[3])
         p[0] = p[1]
+
+    def p_block_sources(self, p):
+        "block : sources"
+        #              1
+        p[0] = [p[1]]
+
+    def p_block_extend_sources(self, p):
+        "block : sources block"
+        #              1     2
+        p[0] = [p[1]] + p[2]
+
+    def p_block_notsources(self, p):
+        "block : notsources"
+        #                 1
+        p[0] = [p[1]]
+
+    def p_block_extend_notsources(self, p):
+        "block : notsources block"
+        #                 1     2
+        p[0] = [p[1]] + p[2]
 
     def p_block_regions(self, p):
         "block : regions"
@@ -487,6 +517,16 @@ class ADLParser(object):
         #            1
         p[0] = p[1]
 
+    def p_stringlist(self, p):
+        "stringlist : string"
+        #                  1
+        p[0] = [p[1]]
+
+    def p_stringlist_extend(self, p):
+        "stringlist : stringlist COMMA string"
+        #                      1     2      3
+        p[0] = p[1] + [p[3]]
+
     def p_string_literal_multilinestring(self, p):
         "string : MULTILINESTRING"
         #                       1
@@ -531,11 +571,6 @@ class ADLParser(object):
         "arglist : arg COMMA arglist"
         #            1     2       3
         p[0] = [p[1]] + p[3]
-
-    def p_arglist_extra_comma(self, p):    # optional: for trailing commas f(x, y,)
-        "arglist : arg COMMA"
-        #            1     2
-        p[0] = [p[1]]
 
     def p_error(self, p):
         if p is None:

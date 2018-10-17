@@ -13,7 +13,7 @@ class ADLLexer(object):
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "COLONEQ",
               "OR", "AND", "NOT",
-              "EQEQUAL", "NOTEQUAL",
+              "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",
               "SEMICOLON"]
@@ -50,6 +50,10 @@ class ADLLexer(object):
     t_NOT          = r"not"
     t_EQEQUAL      = r"=="
     t_NOTEQUAL     = r"!="
+    t_LESSEQ       = r"<="
+    t_LESS         = r"<"
+    t_GREATEREQ    = r">="
+    t_GREATER      = r">"
     t_PLUS         = r"\+"
     t_MINUS        = r"-"
     t_TIMES        = r"\*"

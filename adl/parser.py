@@ -128,7 +128,51 @@ class ADLParser(object):
     def p_compare_notequal_chain(self, p):    # optional: for chained x != y != z
         "compare : compare NOTEQUAL arith"
         #                1        2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.NotEqual(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(pos, 2))]
+        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.NotEqual(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+
+    def p_compare_lesseq(self, p):
+        "compare : arith LESSEQ arith"
+        #              1      2     3
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.LessEq(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    def p_compare_lesseq_chain(self, p):    # optional: for chained x <= y <= z
+        "compare : compare LESSEQ arith"
+        #                1      2     3
+        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.LessEq(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+
+    def p_compare_less(self, p):
+        "compare : arith LESS arith"
+        #              1    2     3
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Less(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    def p_compare_less_chain(self, p):    # optional: for chained x < y < z
+        "compare : compare LESS arith"
+        #                1    2     3
+        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.Less(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+
+    def p_compare_greatereq(self, p):
+        "compare : arith GREATEREQ arith"
+        #              1         2     3
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.GreaterEq(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    def p_compare_greatereq_chain(self, p):    # optional: for chained x >= y >= z
+        "compare : compare GREATEREQ arith"
+        #                1         2     3
+        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.GreaterEq(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+
+    def p_compare_greater(self, p):
+        "compare : arith GREATER arith"
+        #              1       2     3
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    def p_compare_greater_chain(self, p):    # optional: for chained x > y > z
+        "compare : compare GREATER arith"
+        #                1       2     3
+        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
     def p_arith(self, p):

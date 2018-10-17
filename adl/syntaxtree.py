@@ -53,6 +53,10 @@ class And(Special): pass
 class Not(Special): pass
 class IsEqual(Special): pass
 class NotEqual(Special): pass
+class LessEq(Special): pass
+class Less(Special): pass
+class GreaterEq(Special): pass
+class Greater(Special): pass
 class Plus(Special): pass
 class Minus(Special): pass
 class Times(Special): pass

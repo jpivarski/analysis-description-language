@@ -7,19 +7,73 @@ import adl.error
 import adl.parser
 import adl.util
 from adl.syntaxtree import *
-
+    
 class SymbolTable(object):
+    @classmethod
+    def fromdict(cls, data, parent=None):
+        out = SymbolTable(parent)
+        for n, x in data.items():
+            out[Identifier(n)] = x
+        return out
+
     def __init__(self, parent=None):
         self.parent = None
         self.symbols = {}
 
     def __getitem__(self, where):
-        if where in self.symbols:
-            return self.symbols[where.value]
+        if where.name in self.symbols:
+            return self.symbols[where.name]
         elif self.parent is not None:
-            return self.parent[where.value]
+            return self.parent[where.name]
         else:
-            raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.value)), where)
+            raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.name)), where)
+
+    def __setitem__(self, where, what):
+        self.symbols[where.name] = what
+
+def calculate(expression, symbols):
+    if isinstance(expression, Literal):
+        return expression.value
+
+    elif isinstance(expression, Identifier):
+        return symbols[expression]
+
+    elif isinstance(expression, Call):
+        raise NotImplementedError
+
+    else:
+        raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)
+
+def handle(statement, symbols, source, aggregation):
+    if isinstance(statement, Define):
+        raise NotImplementedError
+
+    elif isinstance(statement, FunctionDefine):
+        raise NotImplementedError
+
+    elif isinstance(statement, Count):
+        raise NotImplementedError
+
+    elif isinstance(statement, Profile):
+        raise NotImplementedError
+
+    elif isinstance(statement, Fraction):
+        raise NotImplementedError
+
+    elif isinstance(statement, Vary):
+        raise NotImplementedError
+
+    elif isinstance(statement, Region):
+        raise NotImplementedError
+
+    elif isinstance(statement, Regions):
+        raise NotImplementedError
+
+    elif isinstance(statement, Source):
+        raise NotImplementedError
+
+    else:
+        raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
 
 class Storage(object): pass
 
@@ -170,13 +224,8 @@ class Run(object):
         self.clear()
 
     def clear(self):
-        HERE
+        pass  # FIXME
 
-
-
-
-
-        
     def __iter__(self, source=None, **data):
         if not isinstance(self.ast, BodySuite):
             raise adl.error.ADLTypeError("this ADL source file/string is not an expression")
@@ -188,4 +237,16 @@ class Run(object):
             self(source=source, **{n: x[i] for n, x in data.items()})
 
     def __call__(self, source=None, **data):
-        HERE
+        symbols = SymbolTable.fromdict(data)
+
+        if isinstance(self.ast, BodySuite):
+            for statement in self.ast.body[:-1]:
+                handle(statement, symbols, source, self.aggregation)
+            return calculate(self.ast.body[-1], symbols)
+
+        elif isinstance(self.ast, BlockSuite):
+            for statement in self.ast.block:
+                handle(statement, symbols, source, self.aggregation)
+
+        else:
+            raise adl.error.ADLInternalError("cannot execute a {0}; it is not an expression or a set of region/vary blocks".format(type(statement).__name__), statement)

@@ -96,7 +96,10 @@ class UnaryPlus(Special): pass
 class UnaryMinus(Special): pass
 class Power(Special): pass
 
-class Literal(AST):
+class Expression(AST): pass
+class Statement(AST): pass
+
+class Literal(Expression):
     def __init__(self, value, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Literal, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.value = value
@@ -104,7 +107,7 @@ class Literal(AST):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.value))
 
-# class LiteralList(AST):
+# class LiteralList(Expression):
 #     def __init__(self, value, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
 #         super(Literal, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
 #         self.value = value
@@ -124,7 +127,7 @@ class Literal(AST):
 #     def children(self):
 #         return list(self.value)
 
-class Identifier(AST):
+class Identifier(Expression):
     def __init__(self, name, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Identifier, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
@@ -132,7 +135,7 @@ class Identifier(AST):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.name))
 
-class Call(AST):
+class Call(Expression):
     def __init__(self, function, arguments, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Call, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.function = function
@@ -193,7 +196,7 @@ class Inline(AST):
         if not topdown:
             yield self
 
-class Define(AST):
+class Define(Statement):
     def __init__(self, target, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Define, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.target = target
@@ -221,7 +224,7 @@ class Define(AST):
         if not topdown:
             yield self
 
-class FunctionDefine(AST):
+class FunctionDefine(Statement):
     def __init__(self, target, body, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(FunctionDefine, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.target = target
@@ -278,7 +281,7 @@ class Axis(AST):
         if not topdown:
             yield self
 
-class Count(AST):
+class Count(Statement):
     def __init__(self, name, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Count, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
@@ -316,7 +319,7 @@ class Count(AST):
         if not topdown:
             yield self
 
-class Profile(AST):
+class Profile(Statement):
     def __init__(self, name, expression, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Profile, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
@@ -357,7 +360,7 @@ class Profile(AST):
         if not topdown:
             yield self
 
-class Fraction(AST):
+class Fraction(Statement):
     def __init__(self, name, predicate, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Fraction, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
@@ -427,7 +430,7 @@ class Variation(AST):
         if not topdown:
             yield self
 
-class Vary(AST):
+class Vary(Statement):
     def __init__(self, variations, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Vary, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.variations = variations
@@ -457,7 +460,7 @@ class Vary(AST):
         if not topdown:
             yield self
 
-class Region(AST):
+class Region(Statement):
     def __init__(self, name, predicate, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Region, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
@@ -489,7 +492,7 @@ class Region(AST):
         if not topdown:
             yield self
 
-class Regions(AST):
+class Regions(Statement):
     def __init__(self, name, axes, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Regions, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
@@ -522,7 +525,7 @@ class Regions(AST):
         if not topdown:
             yield self
 
-class Source(AST):
+class Source(Statement):
     def __init__(self, names, block, inclusive, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Source, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.names = names

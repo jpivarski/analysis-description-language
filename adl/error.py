@@ -22,11 +22,11 @@ class ADLSourceError(ADLError):
 class ADLNodeError(ADLSourceError):
     def __init__(self, message, node=None, wide=False):
         if node is None or node.source is None:
-            ADLError.__init__(message)
+            ADLError.__init__(self, message)
         elif not wide:
-            ADLSourceError.__init__(message, node.source, node.lineno, node.col_offset)
+            ADLSourceError.__init__(self, message, node.source, node.lineno, node.col_offset)
         else:
-            ADLSourceError.__init__(message, node.source, node.lineno, node.col_offset, node.lineno2, node.col_offset2)
+            ADLSourceError.__init__(self, message, node.source, node.lineno, node.col_offset, node.lineno2, node.col_offset2)
 
 class ADLSyntaxError(ADLSourceError): pass
 class ADLTypeError(ADLNodeError): pass

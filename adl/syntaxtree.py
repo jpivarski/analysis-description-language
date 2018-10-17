@@ -7,11 +7,17 @@ class AST(object):
         self.lineno2 = lineno2
         self.col_offset2 = col_offset2
 
+    def children(self):
+        return []
+
     def leftmost(self):
         return self
 
     def rightmost(self):
         return self
+    
+    def walk(self, topdown=True):
+        yield self
 
 class LeftRight(AST):
     def __init__(self, left, right, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -22,11 +28,24 @@ class LeftRight(AST):
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.left), repr(self.right))
 
+    def children(self):
+        return [self.left, self.right]
+
     def leftmost(self):
         return self.left.leftmost()
 
     def rightmost(self):
         return self.right.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.left.walk(topdown=topdown):
+            yield x
+        for x in self.right.walk(topdown=topdown):
+            yield x
+        if not topdown:
+            yield self
 
 class Right(AST):
     def __init__(self, right, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -36,11 +55,22 @@ class Right(AST):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.right))
 
+    def children(self):
+        return [self.right]
+
     def leftmost(self):
         return self.right.leftmost()
 
     def rightmost(self):
         return self.right.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.right.walk(topdown=topdown):
+            yield x
+        if not topdown:
+            yield self
 
 class Special(AST):
     def __repr__(self):
@@ -74,6 +104,26 @@ class Literal(AST):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.value))
 
+# class LiteralList(AST):
+#     def __init__(self, value, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+#         super(Literal, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+#         self.value = value
+
+#     def __repr__(self):
+#         return "{0}({1})".format(type(self).__name__, repr(self.value))
+
+#     def walk(self, topdown=True):
+#         if topdown:
+#             yield self
+#         for x in self.value:
+#             for y in x.walk(topdown=topdown):
+#                 yield y
+#         if not topdown:
+#             yield self
+
+#     def children(self):
+#         return list(self.value)
+
 class Identifier(AST):
     def __init__(self, name, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Identifier, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
@@ -91,6 +141,9 @@ class Call(AST):
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.function), repr(self.arguments))
 
+    def children(self):
+        return [self.function] + self.arguments
+
     def leftmost(self):
         return self.function.leftmost()
 
@@ -99,6 +152,17 @@ class Call(AST):
             return self.arguments[-1].rightmost()
         else:
             return self.function.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.function.walk(topdown=topdown):
+            yield x
+        for x in self.arguments:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class Inline(AST):
     def __init__(self, parameters, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -109,26 +173,82 @@ class Inline(AST):
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.parameters), repr(self.expression))
 
+    def children(self):
+        return self.parameters + [self.expression]
+
     def leftmost(self):
         return self.parameters[0].leftmost()
 
     def rightmost(self):
         return self.expression.rightmost()
 
-class Assign(AST):
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.parameters:
+            for y in x.walk(topdown=topdown):
+                yield y
+        for x in self.expression.walk(topdown=topdown):
+            yield x
+        if not topdown:
+            yield self
+
+class Define(AST):
     def __init__(self, target, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Assign, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        super(Define, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.target = target
         self.expression = expression
 
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.target), repr(self.expression))
 
+    def children(self):
+        return [self.target, self.expression]
+
     def leftmost(self):
         return self.target.leftmost()
 
     def rightmost(self):
         return self.expression.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.target.walk(topdown=topdown):
+            yield x
+        for x in self.expression.walk(topdown=topdown):
+            yield x
+        if not topdown:
+            yield self
+
+class FunctionDefine(AST):
+    def __init__(self, target, body, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(FunctionDefine, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.target = target
+        self.body = body
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.target), repr(self.body))
+
+    def children(self):
+        return [self.target] + self.body
+
+    def leftmost(self):
+        return self.target.leftmost()
+
+    def rightmost(self):
+        return self.body[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.target.walk(topdown=topdown):
+            yield x
+        for x in self.body:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class Axis(AST):
     def __init__(self, binning, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -139,11 +259,24 @@ class Axis(AST):
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.binning), repr(self.expression))
 
+    def children(self):
+        return [self.binning, self.expression]
+
     def leftmost(self):
         return self.binning.leftmost()
 
     def rightmost(self):
         return self.expression.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.binning.walk(topdown=topdown):
+            yield x
+        for x in self.expression.walk(topdown=topdown):
+            yield x
+        if not topdown:
+            yield self
 
 class Count(AST):
     def __init__(self, name, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -154,6 +287,9 @@ class Count(AST):
 
     def __repr__(self):
         return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.axes), repr(self.weight))
+
+    def children(self):
+        return [self.name] + self.axes + ([self.weight] if self.weight is not None else [])
 
     def leftmost(self):
         return self.name.leftmost()
@@ -166,6 +302,20 @@ class Count(AST):
         else:
             return self.weight.rightmost()
 
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.axes:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if self.weight is not None:
+            for x in self.weight.walk(topdown=topdown):
+                yield x
+        if not topdown:
+            yield self
+
 class Profile(AST):
     def __init__(self, name, expression, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Profile, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
@@ -176,6 +326,9 @@ class Profile(AST):
 
     def __repr__(self):
         return "{0}({1}, {2}, {3}, {4})".format(type(self).__name__, repr(self.name), repr(self.expression), repr(self.axes), repr(self.weight))
+
+    def children(self):
+        return [self.name, self.expression] + self.axes + ([self.weight] if self.weight is not None else [])
 
     def leftmost(self):
         return self.name.leftmost()
@@ -188,6 +341,22 @@ class Profile(AST):
         else:
             return self.weight.rightmost()
 
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.expression.walk(topdown=topdown):
+            yield x
+        for x in self.axes:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if self.weight is not None:
+            for x in self.weight.walk(topdown=topdown):
+                yield x
+        if not topdown:
+            yield self
+
 class Fraction(AST):
     def __init__(self, name, predicate, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Fraction, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
@@ -198,6 +367,9 @@ class Fraction(AST):
 
     def __repr__(self):
         return "{0}({1}, {2}, {3}, {4})".format(type(self).__name__, repr(self.name), repr(self.predicate), repr(self.axes), repr(self.weight))
+
+    def children(self):
+        return [self.name, self.predicate] + self.axes + ([self.weight] if self.weight is not None else [])
 
     def leftmost(self):
         return self.name.leftmost()
@@ -210,20 +382,50 @@ class Fraction(AST):
         else:
             return self.weight.rightmost()
 
-class NamedAssignments(AST):
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.predicate.walk(topdown=topdown):
+            yield x
+        for x in self.axes:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if self.weight is not None:
+            for x in self.weight.walk(topdown=topdown):
+                yield x
+        if not topdown:
+            yield self
+
+class Variation(AST):
     def __init__(self, name, assignments, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(NamedAssignments, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        super(Variation, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
         self.assignments = assignments
 
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.name), repr(self.assignments))
 
+    def children(self):
+        return [self.name] + self.assignments
+
     def leftmost(self):
         return self.name.leftmost()
 
     def rightmost(self):
         return self.assignments[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.assignments:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class Vary(AST):
     def __init__(self, variations, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -233,12 +435,27 @@ class Vary(AST):
 
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.variations), repr(self.block))
+
+    def children(self):
+        return self.variations + self.block
     
     def leftmost(self):
         return self.variations[0].leftmost()
 
     def rightmost(self):
         return self.block[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.variations:
+            for y in x.walk(topdown=topdown):
+                yield y
+        for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class Region(AST):
     def __init__(self, name, predicate, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -250,11 +467,27 @@ class Region(AST):
     def __repr__(self):
         return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.predicate), repr(self.block))
 
+    def children(self):
+        return [self.name, self.predicate] + self.block
+
     def leftmost(self):
         return self.name.leftmost()
 
     def rightmost(self):
         return self.block[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.predicate.walk(topdown=topdown):
+            yield x
+        for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class Regions(AST):
     def __init__(self, name, axes, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -266,15 +499,32 @@ class Regions(AST):
     def __repr__(self):
         return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.axes), repr(self.block))
 
+    def children(self):
+        return [self.name] + self.axes + self.block
+
     def leftmost(self):
         return self.name.leftmost()
 
     def rightmost(self):
         return self.block[-1].rightmost()
 
-class Sources(AST):
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.axes:
+            for y in x.walk(topdown=topdown):
+                yield y
+        for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
+
+class Source(AST):
     def __init__(self, names, block, inclusive, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Sources, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        super(Source, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.names = names
         self.block = block
         self.inclusive = inclusive
@@ -282,11 +532,26 @@ class Sources(AST):
     def __repr__(self):
         return "{0}({1}, {2}, inclusive={3})".format(type(self).__name__, repr(self.names), repr(self.block), repr(self.inclusive))
 
+    def children(self):
+        return self.names + self.block
+
     def leftmost(self):
         return self.names[0].leftmost()
 
     def rightmost(self):
         return self.block[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.names:
+            for y in x.walk(topdown=topdown):
+                yield y
+        for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class Suite(AST): pass
 
@@ -298,11 +563,23 @@ class BlockSuite(Suite):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.block))
 
+    def children(self):
+        return list(self.block)
+
     def leftmost(self):
         return self.block.leftmost()
 
     def rightmost(self):
         return self.block.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
 
 class BodySuite(Suite):
     def __init__(self, body, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
@@ -312,8 +589,20 @@ class BodySuite(Suite):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.body))
 
+    def children(self):
+        return list(self.body)
+
     def leftmost(self):
         return self.body.leftmost()
 
     def rightmost(self):
         return self.body.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.body:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self

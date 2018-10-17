@@ -45,15 +45,15 @@ class ADLParser(object):
         #           1
         p[0] = adl.syntaxtree.BodySuite(p[1], **self.pos(p, 1))
 
-    def p_sources(self, p):
-        "sources : SOURCES stringlist OPENCURLY block CLOSECURLY"
-        #                1          2         3     4          5
-        p[0] = adl.syntaxtree.Sources(p[2], p[4], inclusive=True, **self.pos(p, 1))
+    def p_source(self, p):
+        "source : SOURCE stringlist OPENCURLY block CLOSECURLY"
+        #              1          2         3     4          5
+        p[0] = adl.syntaxtree.Source(p[2], p[4], inclusive=True, **self.pos(p, 1))
 
-    def p_notsources(self, p):
-        "notsources : NOT SOURCES stringlist OPENCURLY block CLOSECURLY"
-        #               1       2          3         4     5          6
-        p[0] = adl.syntaxtree.Sources(p[3], p[5], inclusive=False, **self.pos(p, 2))
+    def p_notsource(self, p):
+        "notsource : NOT SOURCE stringlist OPENCURLY block CLOSECURLY"
+        #              1      2          3         4     5          6
+        p[0] = adl.syntaxtree.Source(p[3], p[5], inclusive=False, **self.pos(p, 2))
 
     def p_regions(self, p):
         "regions : REGIONS string axis OPENCURLY block CLOSECURLY"
@@ -83,7 +83,7 @@ class ADLParser(object):
     def p_namedassignments(self, p):
         "namedassignments : string assignment"
         #                        1          2
-        p[0] = adl.syntaxtree.NamedAssignments(p[1], [p[2]], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Variation(p[1], [p[2]], **self.pos(p, 1))
 
     def p_namedassignments_extend(self, p):
         "namedassignments : namedassignments assignment"
@@ -98,24 +98,24 @@ class ADLParser(object):
         p[1].assignments.append(p[3])
         p[0] = p[1]
 
-    def p_block_sources(self, p):
-        "block : sources"
-        #              1
+    def p_block_source(self, p):
+        "block : source"
+        #             1
         p[0] = [p[1]]
 
-    def p_block_extend_sources(self, p):
-        "block : sources block"
-        #              1     2
+    def p_block_extend_source(self, p):
+        "block : source block"
+        #             1     2
         p[0] = [p[1]] + p[2]
 
-    def p_block_notsources(self, p):
-        "block : notsources"
-        #                 1
+    def p_block_notsource(self, p):
+        "block : notsource"
+        #                1
         p[0] = [p[1]]
 
-    def p_block_extend_notsources(self, p):
-        "block : notsources block"
-        #                 1     2
+    def p_block_extend_notsource(self, p):
+        "block : notsource block"
+        #                1     2
         p[0] = [p[1]] + p[2]
 
     def p_block_regions(self, p):
@@ -337,17 +337,17 @@ class ADLParser(object):
     def p_assignment(self, p):
         "assignment : IDENTIFIER COLONEQ expression"
         #                      1       2          3
-        p[0] = adl.syntaxtree.Assign(adl.syntaxtree.Identifier(p[1], **self.pos(p, 1)), p[3], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Define(adl.syntaxtree.Identifier(p[1], **self.pos(p, 1)), p[3], **self.pos(p, 2))
 
     def p_assignment_call_expression(self, p):
         "assignment : call COLONEQ expression"
         #                1       2          3
-        p[0] = adl.syntaxtree.Assign(p[1], p[3], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.FunctionDefine(p[1], [p[3]], **self.pos(p, 2))
 
     def p_assignment_call_body(self, p):
         "assignment : call COLONEQ OPENCURLY body CLOSECURLY"
         #                1       2         3    4          5
-        p[0] = adl.syntaxtree.Assign(p[1], p[4], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.FunctionDefine(p[1], p[4], **self.pos(p, 2))
 
     def p_inline_identifier(self, p):
         "inline : IDENTIFIER RIGHTARROW expression"

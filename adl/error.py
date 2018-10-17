@@ -19,4 +19,15 @@ class ADLSourceError(ADLError):
             quoted = "\n    ".join(source.split("\n")[lineno - 1 : lineno2])
             super(ADLSourceError, self).__init__(message + "\n    " + quoted)
 
+class ADLNodeError(ADLSourceError):
+    def __init__(self, message, node=None, wide=False):
+        if node is None or node.source is None:
+            ADLError.__init__(message)
+        elif not wide:
+            ADLSourceError.__init__(message, node.source, node.lineno, node.col_offset)
+        else:
+            ADLSourceError.__init__(message, node.source, node.lineno, node.col_offset, node.lineno2, node.col_offset2)
+
 class ADLSyntaxError(ADLSourceError): pass
+class ADLTypeError(ADLNodeError): pass
+class ADLInternalError(ADLNodeError): pass

@@ -1,11 +1,11 @@
 import ply.yacc
 
 import adl.syntaxtree
-import adl.tokenize
+import adl.tokenizer
 import adl.error
 
 class ADLParser(object):
-    tokens = adl.tokenize.ADLLexer.tokens
+    tokens = adl.tokenizer.ADLLexer.tokens
 
     def pos(self, p, n):
         lo, hi = p.lexspan(n)
@@ -274,7 +274,7 @@ class ADLParser(object):
 
 def parse(source):
     parser = ADLParser()
-    lexer = adl.tokenize.ADLLexer()
+    lexer = adl.tokenizer.ADLLexer()
 
     parser.build(write_tables=False)  # write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
     lexer.build()

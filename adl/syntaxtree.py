@@ -156,11 +156,13 @@ class Count(AST):
         return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.axes), repr(self.weight))
 
     def leftmost(self):
-        return self.axes[0].leftmost()
+        return self.name.leftmost()
 
     def rightmost(self):
-        if self.weight is None:
-            return self.axes[-1].leftmost()
+        if self.weight is None and len(self.axes) == 0:
+            return self.name.rightmost()
+        elif self.weight is None:
+            return self.axes[-1].rightmost()
         else:
             return self.weight.rightmost()
 
@@ -176,10 +178,42 @@ class Profile(AST):
         return "{0}({1}, {2}, {3}, {4})".format(type(self).__name__, repr(self.name), repr(self.expression), repr(self.axes), repr(self.weight))
 
     def leftmost(self):
-        return self.expression.leftmost()
+        return self.name.leftmost()
 
     def rightmost(self):
-        if self.weight is None:
-            return self.axes[-1].leftmost()
+        if self.weight is None and len(self.axes) == 0:
+            return self.expression.rightmost()
+        elif self.weight is None:
+            return self.axes[-1].rightmost()
         else:
             return self.weight.rightmost()
+
+class NamedAssignments(AST):
+    def __init__(self, name, assignments, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(NamedAssignments, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.assignments = assignments
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.name), repr(self.assignments))
+
+    def leftmost(self):
+        return self.name.leftmost()
+
+    def rightmost(self):
+        return self.assignments[-1].rightmost()
+
+class Vary(AST):
+    def __init__(self, variations, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Vary, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.variations = variations
+        self.block = block
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.variations), repr(self.block))
+    
+    def leftmost(self):
+        return self.variations[0].leftmost()
+
+    def rightmost(self):
+        return self.block[-1].rightmost()

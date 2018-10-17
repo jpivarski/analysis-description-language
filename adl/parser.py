@@ -35,23 +35,71 @@ class ADLParser(object):
         if "\n" not in left.source[left.rightmost().lexspan[1]:right.leftmost().lexspan[0]]:
             raise adl.error.ADLSyntaxError("missing semicolon or newline", left.source, right.leftmost().lineno, right.leftmost().col_offset)
 
-    def p_block_expression(self, p):
-        "block : expression"
-        #                 1
+    def p_suite_block(self, p):
+        "suite : block"
+        #            1
+        p[0] = p[1]
+
+    def p_suite_body(self, p):
+        "suite : body"
+        #           1
+        p[0] = p[1]
+
+    def p_vary(self, p):
+        "vary : VARY variations OPENCURLY block CLOSECURLY"
+        #          1          2         3     4          5
+        p[0] = adl.syntaxtree.Vary(p[2], p[4], **self.pos(p, 1))
+
+    def p_variations(self, p):
+        "variations : namedassignments"
+        #                            1
         p[0] = [p[1]]
+
+    def p_variations_extend(self, p):
+        "variations : namedassignments variations"
+        #                            1          2
+        p[0] = [p[1]] + p[2]
+
+    def p_namedassignments(self, p):
+        "namedassignments : string COLON assignment"
+        #                        1     2          3
+        p[0] = adl.syntaxtree.NamedAssignments(p[1], [p[3]], **self.pos(p, 2))
+
+    def p_namedassignments_extend(self, p):
+        "namedassignments : namedassignments assignment"
+        #                                  1          2
+        self.require_separator(p[1].assignments[-1], p[2])
+        p[1].assignments.append(p[2])
+        p[0] = p[1]
+        
+    def p_namedassignments_extend_semi(self, p):
+        "namedassignments : namedassignments SEMICOLON assignment"
+        #                                  1         2          3
+        p[1].assignments.append(p[3])
+        p[0] = p[1]
+
+    def p_block_vary(self, p):
+        "block : vary"
+        #           1
+        p[0] = [p[1]]
+
+    def p_block_extend_vary(self, p):
+        "block : vary block"
+        #           1     2
+        p[0] = [p[1]] + p[2]
 
     def p_block_count(self, p):
         "block : count"
         #            1
         p[0] = [p[1]]
 
-    def p_block_count_extend(self, p):
+    def p_block_extend_count(self, p):
         "block : count block"
         #            1     2
         self.require_separator(p[1], p[2][0])
         p[0] = [p[1]] + p[2]
 
-    def p_block_count_extend(self, p):
+    def p_block_extend_count_semi(self, p):
         "block : count SEMICOLON block"
         #            1         2     3
         p[0] = [p[1]] + p[3]
@@ -61,26 +109,64 @@ class ADLParser(object):
         #              1
         p[0] = [p[1]]
 
-    def p_block_profile_extend(self, p):
+    def p_block_extend_profile(self, p):
         "block : profile block"
         #              1     2
         self.require_separator(p[1], p[2][0])
         p[0] = [p[1]] + p[2]
 
-    def p_block_profile_extend(self, p):
+    def p_block_extend_profile_semi(self, p):
         "block : profile SEMICOLON block"
         #              1         2     3
         p[0] = [p[1]] + p[3]
 
-    def p_block_assignment_extend(self, p):
+    def p_block_extend_assignment(self, p):
         "block : assignment block"
         #                 1     2
         self.require_separator(p[1], p[2][0])
         p[0] = [p[1]] + p[2]
 
-    def p_block_assignment_extend_semi(self, p):
+    def p_block_extend_assignment_semi(self, p):
         "block : assignment SEMICOLON block"
         #                 1         2     3
+        p[0] = [p[1]] + p[3]
+
+    def p_body_expression(self, p):
+        "body : expression"
+        #                1
+        p[0] = [p[1]]
+
+    def p_body_extend_count(self, p):
+        "body : count body"
+        #           1    2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_body_extend_count_semi(self, p):
+        "body : count SEMICOLON body"
+        #           1         2    3
+        p[0] = [p[1]] + p[3]
+
+    def p_body_extend_profile(self, p):
+        "body : profile body"
+        #             1    2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_body_extend_profile_semi(self, p):
+        "body : profile SEMICOLON body"
+        #             1         2    3
+        p[0] = [p[1]] + p[3]
+
+    def p_body_extend_assignment(self, p):
+        "body : assignment body"
+        #                1    2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_body_extend_assignment_semi(self, p):
+        "body : assignment SEMICOLON body"
+        #                1         2    3
         p[0] = [p[1]] + p[3]
 
     def p_count(self, p):
@@ -143,16 +229,16 @@ class ADLParser(object):
     def p_assignment(self, p):
         "assignment : IDENTIFIER COLONEQ expression"
         #                      1       2          3
-        p[0] = adl.syntaxtree.Assign(p[1], p[3], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Assign(adl.syntaxtree.Identifier(p[1], **self.pos(p, 1)), p[3], **self.pos(p, 2))
 
     def p_assignment_call_expression(self, p):
         "assignment : call COLONEQ expression"
         #                1       2          3
         p[0] = adl.syntaxtree.Assign(p[1], p[3], **self.pos(p, 2))
 
-    def p_assignment_call_block(self, p):
-        "assignment : call COLONEQ OPENCURLY block CLOSECURLY"
-        #                1       2         3     4          5
+    def p_assignment_call_body(self, p):
+        "assignment : call COLONEQ OPENCURLY body CLOSECURLY"
+        #                1       2         3    4          5
         p[0] = adl.syntaxtree.Assign(p[1], p[4], **self.pos(p, 2))
 
     def p_inline_identifier(self, p):
@@ -423,7 +509,7 @@ class ADLParser(object):
 
     def p_error(self, p):
         if p is None:
-            raise adl.error.ADLError("an ADL source file/string must end in an expression or an aggregation")
+            raise adl.error.ADLError("an ADL source file/string must be an expression or a set of region/vary blocks (either may be preceded by assignments)")
         else:
             raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 

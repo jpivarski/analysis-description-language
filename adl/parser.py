@@ -45,6 +45,16 @@ class ADLParser(object):
         #           1
         p[0] = p[1]
 
+    def p_regions(self, p):
+        "regions : REGIONS string axis OPENCURLY block CLOSECURLY"
+        #                1      2    3         4     5          6
+        p[0] = adl.syntaxtree.Regions(p[2], p[3], p[5], **self.pos(p, 1))
+
+    def p_region(self, p):
+        "region : REGION string expression OPENCURLY block CLOSECURLY"
+        #              1      2          3         4     5          6
+        p[0] = adl.syntaxtree.Region(p[2], p[3], p[5], **self.pos(p, 1))
+
     def p_vary(self, p):
         "vary : VARY variations OPENCURLY block CLOSECURLY"
         #          1          2         3     4          5
@@ -77,6 +87,26 @@ class ADLParser(object):
         #                                  1         2          3
         p[1].assignments.append(p[3])
         p[0] = p[1]
+
+    def p_block_regions(self, p):
+        "block : regions"
+        #              1
+        p[0] = [p[1]]
+
+    def p_block_extend_regions(self, p):
+        "block : regions block"
+        #              1     2
+        p[0] = [p[1]] + p[2]
+
+    def p_block_region(self, p):
+        "block : region"
+        #             1
+        p[0] = [p[1]]
+
+    def p_block_extend_region(self, p):
+        "block : region block"
+        #             1     2
+        p[0] = [p[1]] + p[2]
 
     def p_block_vary(self, p):
         "block : vary"

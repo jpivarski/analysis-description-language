@@ -12,11 +12,13 @@ class ADLLexer(object):
                 "count":   "COUNT",
                 "profile": "PROFILE",
                 "weight":  "WEIGHT",
-                "vary":    "VARY"}
+                "vary":    "VARY",
+                "region":  "REGION",
+                "regions": "REGIONS"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "COLONEQ", "LEFTARROW", "RIGHTARROW",
-              "OR", "AND", "NOT", "COUNT", "PROFILE", "WEIGHT", "VARY",
+              "OR", "AND", "NOT", "COUNT", "PROFILE", "WEIGHT", "VARY", "REGION", "REGIONS",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",

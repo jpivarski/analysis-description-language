@@ -217,3 +217,35 @@ class Vary(AST):
 
     def rightmost(self):
         return self.block[-1].rightmost()
+
+class Region(AST):
+    def __init__(self, name, predicate, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Region, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.predicate = predicate
+        self.block = block
+
+    def __repr__(self):
+        return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.predicate), repr(self.block))
+
+    def leftmost(self):
+        return self.name.leftmost()
+
+    def rightmost(self):
+        return self.block[-1].rightmost()
+
+class Regions(AST):
+    def __init__(self, name, axes, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Regions, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.axes = axes
+        self.block = block
+
+    def __repr__(self):
+        return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.axes), repr(self.block))
+
+    def leftmost(self):
+        return self.name.leftmost()
+
+    def rightmost(self):
+        return self.block[-1].rightmost()

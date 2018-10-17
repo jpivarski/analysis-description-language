@@ -287,3 +287,33 @@ class Sources(AST):
 
     def rightmost(self):
         return self.block[-1].rightmost()
+
+class Suite(AST): pass
+
+class BlockSuite(Suite):
+    def __init__(self, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(BlockSuite, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.block = block
+
+    def __repr__(self):
+        return "{0}({1})".format(type(self).__name__, repr(self.block))
+
+    def leftmost(self):
+        return self.block.leftmost()
+
+    def rightmost(self):
+        return self.block.rightmost()
+
+class BodySuite(Suite):
+    def __init__(self, body, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(BodySuite, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.body = body
+
+    def __repr__(self):
+        return "{0}({1})".format(type(self).__name__, repr(self.body))
+
+    def leftmost(self):
+        return self.body.leftmost()
+
+    def rightmost(self):
+        return self.body.rightmost()

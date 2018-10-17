@@ -38,12 +38,12 @@ class ADLParser(object):
     def p_suite_block(self, p):
         "suite : block"
         #            1
-        p[0] = p[1]
+        p[0] = adl.syntaxtree.BlockSuite(p[1], **self.pos(p, 1))
 
     def p_suite_body(self, p):
         "suite : body"
         #           1
-        p[0] = p[1]
+        p[0] = adl.syntaxtree.BodySuite(p[1], **self.pos(p, 1))
 
     def p_sources(self, p):
         "sources : SOURCES stringlist OPENCURLY block CLOSECURLY"
@@ -633,7 +633,7 @@ def parse(source):
     parser = ADLParser()
     lexer = adl.tokenizer.ADLLexer()
 
-    parser.build(write_tables=False)  # write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
+    parser.build(write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
     lexer.build()
 
     return parser.parser.parse(source, lexer=lexer.lexer, tracking=True)

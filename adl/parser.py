@@ -180,6 +180,22 @@ class ADLParser(object):
         #              1         2     3
         p[0] = [p[1]] + p[3]
 
+    def p_block_fraction(self, p):
+        "block : fraction"
+        #               1
+        p[0] = [p[1]]
+
+    def p_block_extend_fraction(self, p):
+        "block : fraction block"
+        #               1     2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_block_extend_fraction_semi(self, p):
+        "block : fraction SEMICOLON block"
+        #               1         2     3
+        p[0] = [p[1]] + p[3]
+
     def p_block_extend_assignment(self, p):
         "block : assignment block"
         #                 1     2
@@ -216,6 +232,17 @@ class ADLParser(object):
     def p_body_extend_profile_semi(self, p):
         "body : profile SEMICOLON body"
         #             1         2    3
+        p[0] = [p[1]] + p[3]
+
+    def p_body_extend_fraction(self, p):
+        "body : fraction body"
+        #              1    2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_body_extend_fraction_semi(self, p):
+        "body : fraction SEMICOLON body"
+        #              1         2    3
         p[0] = [p[1]] + p[3]
 
     def p_body_extend_assignment(self, p):
@@ -270,6 +297,27 @@ class ADLParser(object):
         #                1      2          3          4
         axis, weight = p[4]
         p[0] = adl.syntaxtree.Profile(p[2], p[3], axis, weight, **self.pos(p, 1))
+
+    def p_fraction(self, p):
+        "fraction : FRACTION string expression"
+        #                  1      2          3
+        p[0] = adl.syntaxtree.Fraction(p[2], p[3], [], None, **self.pos(p, 1))
+
+    def p_fraction_weight(self, p):
+        "fraction : FRACTION string expression WEIGHT expression"
+        #                  1      2          3      4          5
+        p[0] = adl.syntaxtree.Fraction(p[2], p[3], [], p[5], **self.pos(p, 1))
+
+    def p_fraction_axis(self, p):
+        "fraction : FRACTION string expression axis"
+        #                  1      2          3    4
+        p[0] = adl.syntaxtree.Fraction(p[2], p[3], p[4], None, **self.pos(p, 1))
+
+    def p_fraction_axisweight(self, p):
+        "fraction : FRACTION string expression axisweight"
+        #                  1      2          3          4
+        axis, weight = p[4]
+        p[0] = adl.syntaxtree.Fraction(p[2], p[3], axis, weight, **self.pos(p, 1))
 
     def p_axisweight(self, p):
         "axisweight : axis WEIGHT expression"

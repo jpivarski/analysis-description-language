@@ -6,20 +6,21 @@ import ply.lex
 import adl.error
 
 class ADLLexer(object):
-    reserved = {"and":     "AND",
-                "or":      "OR",
-                "not":     "NOT",
-                "count":   "COUNT",
-                "profile": "PROFILE",
-                "weight":  "WEIGHT",
-                "vary":    "VARY",
-                "region":  "REGION",
-                "regions": "REGIONS",
-                "sources": "SOURCES"}
+    reserved = {"and":      "AND",
+                "or":       "OR",
+                "not":      "NOT",
+                "count":    "COUNT",
+                "profile":  "PROFILE",
+                "fraction": "FRACTION",
+                "weight":   "WEIGHT",
+                "vary":     "VARY",
+                "region":   "REGION",
+                "regions":  "REGIONS",
+                "sources":  "SOURCES"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "COLONEQ", "LEFTARROW", "RIGHTARROW",
-              "OR", "AND", "NOT", "COUNT", "PROFILE", "WEIGHT", "VARY", "REGION", "REGIONS", "SOURCES",
+              "OR", "AND", "NOT", "COUNT", "PROFILE", "FRACTION", "WEIGHT", "VARY", "REGION", "REGIONS", "SOURCES",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",

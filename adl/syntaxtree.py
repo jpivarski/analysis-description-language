@@ -188,6 +188,28 @@ class Profile(AST):
         else:
             return self.weight.rightmost()
 
+class Fraction(AST):
+    def __init__(self, name, predicate, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Fraction, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.predicate = predicate
+        self.axes = axes
+        self.weight = weight
+
+    def __repr__(self):
+        return "{0}({1}, {2}, {3}, {4})".format(type(self).__name__, repr(self.name), repr(self.predicate), repr(self.axes), repr(self.weight))
+
+    def leftmost(self):
+        return self.name.leftmost()
+
+    def rightmost(self):
+        if self.weight is None and len(self.axes) == 0:
+            return self.predicate.rightmost()
+        elif self.weight is None:
+            return self.axes[-1].rightmost()
+        else:
+            return self.weight.rightmost()
+
 class NamedAssignments(AST):
     def __init__(self, name, assignments, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(NamedAssignments, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)

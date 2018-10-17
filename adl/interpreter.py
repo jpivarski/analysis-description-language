@@ -260,7 +260,7 @@ def aggregation(node, namespace):
     elif isinstance(node, Count):
         adl.util.check_name(node, namespace)
         if len(node.axes) == 0:
-            namespace[node.name] = Counter()
+            namespace[node.name.value] = Counter()
         else:
             raise NotImplementedError
 

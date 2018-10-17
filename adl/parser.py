@@ -56,6 +56,22 @@ class ADLParser(object):
         #            1         2     3
         p[0] = [p[1]] + p[3]
 
+    def p_block_profile(self, p):
+        "block : profile"
+        #              1
+        p[0] = [p[1]]
+
+    def p_block_profile_extend(self, p):
+        "block : profile block"
+        #              1     2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_block_profile_extend(self, p):
+        "block : profile SEMICOLON block"
+        #              1         2     3
+        p[0] = [p[1]] + p[3]
+
     def p_block_assignment_extend(self, p):
         "block : assignment block"
         #                 1     2
@@ -67,8 +83,6 @@ class ADLParser(object):
         #                 1         2     3
         p[0] = [p[1]] + p[3]
 
-
-
     def p_count(self, p):
         "count : COUNT string"
         #            1      2
@@ -79,30 +93,51 @@ class ADLParser(object):
         #            1      2      3          4
         p[0] = adl.syntaxtree.Count(p[2], [], p[4], **self.pos(p, 1))
 
-    def p_count_histogram(self, p):
-        "count : COUNT string histogram"
-        #            1      2         3
+    def p_count_axis(self, p):
+        "count : COUNT string axis"
+        #            1      2    3
         p[0] = adl.syntaxtree.Count(p[2], p[3], None, **self.pos(p, 1))
 
-    def p_count_histogramweight(self, p):
-        "count : COUNT string histogramweight"
-        #            1      2               3
-        histogram, weight = p[3]
-        p[0] = adl.syntaxtree.Count(p[2], histogram, weight, **self.pos(p, 1))
+    def p_count_axisweight(self, p):
+        "count : COUNT string axisweight"
+        #            1      2          3
+        axis, weight = p[3]
+        p[0] = adl.syntaxtree.Count(p[2], axis, weight, **self.pos(p, 1))
 
-    def p_histogramweight(self, p):
-        "histogramweight : histogram WEIGHT expression"
-        #                          1      2          3
+    def p_profile(self, p):
+        "profile : PROFILE string expression"
+        #                1      2          3
+        p[0] = adl.syntaxtree.Profile(p[2], p[3], [], None, **self.pos(p, 1))
+
+    def p_profile_weight(self, p):
+        "profile : PROFILE string expression WEIGHT expression"
+        #                1      2          3      4          5
+        p[0] = adl.syntaxtree.Profile(p[2], p[3], [], p[5], **self.pos(p, 1))
+
+    def p_profile_axis(self, p):
+        "profile : PROFILE string expression axis"
+        #                1      2          3    4
+        p[0] = adl.syntaxtree.Profile(p[2], p[3], p[4], None, **self.pos(p, 1))
+
+    def p_profile_axisweight(self, p):
+        "profile : PROFILE string expression axisweight"
+        #                1      2          3          4
+        axis, weight = p[4]
+        p[0] = adl.syntaxtree.Profile(p[2], p[3], axis, weight, **self.pos(p, 1))
+
+    def p_axisweight(self, p):
+        "axisweight : axis WEIGHT expression"
+        #                1      2          3
         p[0] = p[1], p[3]
         
-    def p_histogram_single(self, p):
-        "histogram : call LEFTARROW expression"
-        #               1         2          3
+    def p_axis_single(self, p):
+        "axis : call LEFTARROW expression"
+        #          1         2          3
         p[0] = [adl.syntaxtree.Axis(p[1], p[3], **self.pos(p, 2))]
 
-    def p_histogram_extend(self, p):
-        "histogram : histogram call LEFTARROW expression"
-        #                    1    2         3          4
+    def p_axis_extend(self, p):
+        "axis : axis call LEFTARROW expression"
+        #          1    2         3          4
         p[0] = p[1] + [adl.syntaxtree.Axis(p[2], p[4], **self.pos(p, 3))]
 
     def p_assignment(self, p):

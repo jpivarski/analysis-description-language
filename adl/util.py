@@ -39,3 +39,7 @@ def check_params(call):
         raise adl.error.ADLTypeError("cannot define a function with zero arguments (define a value instead)", call)
     if any(not isinstance(x, Identifier) for x in call.arguments):
         raise adl.error.ADLTypeError("cannot define function: parameters must be simple identifiers")
+
+def check_name(node, namespace):
+    if node.name in namespace:
+        raise adl.error.ADLNameError("name {0} is already defined in this scope".format(repr(node.name)), node)

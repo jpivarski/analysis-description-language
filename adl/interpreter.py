@@ -10,8 +10,10 @@ from adl.syntaxtree import *
     
 class SymbolTable(object):
     @classmethod
-    def fromdict(cls, data, parent=None):
-        out = SymbolTable(parent)
+    def root(cls, functions, data):
+        out = SymbolTable()
+        for n, x in functions.items():
+            out[Identifier(n)] = x
         for n, x in data.items():
             out[Identifier(n)] = x
         return out
@@ -31,6 +33,9 @@ class SymbolTable(object):
     def __setitem__(self, where, what):
         self.symbols[where.name] = what
 
+    def __contains__(self, where):
+        return where.name in self.symbols
+            
 def calculate(expression, symbols):
     if isinstance(expression, Literal):
         return expression.value
@@ -74,16 +79,16 @@ def handle(statement, symbols, source, aggregation):
 
     else:
         raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
-
+    
 class Storage(object): pass
 
-class Count(Storage):
+class Counter(Storage):
     def __init__(self):
         self.sumw = 0
         self.sumw2 = 0
 
     def zeros_like(self):
-        return Count()
+        return Counter()
 
     def __repr__(self):
         return "{0} +- {1}".format(self.sumw, math.sqrt(self.sumw2))
@@ -215,7 +220,65 @@ class VariableBinning(Binning):
                     self.values[i].fill(symbols, weight)
                     break
 
+class Namespace(object):
+    def __init__(self):
+        self.values = {}
+
+    def __getitem__(self, where):
+        if not isinstance(where, tuple):
+            where = (where,)
+        head, tail = where[0], where[1:]
+        return self.values[head][tail]
+
+    def __setitem__(self, where, what):
+        self.values[where] = what
+
+    def __contains__(self, where):
+        return where in self.values
+
+def aggregation(node, namespace):
+    if isinstance(node, BlockSuite):
+        for x in node.block:
+            aggregation(x, namespace)
+
+    elif isinstance(node, BodySuite):
+        for x in node.body:
+            aggregation(x, namespace)
+
+    elif isinstance(node, Source):
+        raise NotImplementedError
+
+    elif isinstance(node, Region):
+        raise NotImplementedError
+
+    elif isinstance(node, Regions):
+        raise NotImplementedError
+
+    elif isinstance(node, Vary):
+        raise NotImplementedError
+
+    elif isinstance(node, Count):
+        adl.util.check_name(node, namespace)
+        if len(node.axes) == 0:
+            namespace[node.name] = Counter()
+        else:
+            raise NotImplementedError
+
+    elif isinstance(node, Profile):
+        raise NotImplementedError
+
+    elif isinstance(node, Fraction):
+        raise NotImplementedError
+
+    elif isinstance(node, (Expression, Statement)):
+        pass
+
+    else:
+        raise adl.error.ADLInternalError("cannot initialize {0}; it is not an aggregation".format(type(node).__name__), node)
+
 class Run(object):
+    builtins = {}
+
     def __init__(self, source):
         if isinstance(source, str):
             self.ast = adl.parser.parse(source)
@@ -224,7 +287,8 @@ class Run(object):
         self.clear()
 
     def clear(self):
-        pass  # FIXME
+        self.aggregation = Namespace()
+        aggregation(self.ast, self.aggregation)
 
     def __iter__(self, source=None, **data):
         if not isinstance(self.ast, BodySuite):
@@ -237,7 +301,7 @@ class Run(object):
             self(source=source, **{n: x[i] for n, x in data.items()})
 
     def __call__(self, source=None, **data):
-        symbols = SymbolTable.fromdict(data)
+        symbols = SymbolTable.root(self.builtins, data)
 
         if isinstance(self.ast, BodySuite):
             for statement in self.ast.body[:-1]:
@@ -250,3 +314,6 @@ class Run(object):
 
         else:
             raise adl.error.ADLInternalError("cannot execute a {0}; it is not an expression or a set of region/vary blocks".format(type(statement).__name__), statement)
+
+    def __getitem__(self, where):
+        return self.aggregation[where]

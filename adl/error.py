@@ -30,4 +30,5 @@ class ADLNodeError(ADLSourceError):
 
 class ADLSyntaxError(ADLSourceError): pass
 class ADLTypeError(ADLNodeError): pass
+class ADLNameError(ADLNodeError): pass
 class ADLInternalError(ADLNodeError): pass

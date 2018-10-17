@@ -61,9 +61,9 @@ class ADLParser(object):
         p[0] = [p[1]] + p[2]
 
     def p_namedassignments(self, p):
-        "namedassignments : string COLON assignment"
-        #                        1     2          3
-        p[0] = adl.syntaxtree.NamedAssignments(p[1], [p[3]], **self.pos(p, 2))
+        "namedassignments : string assignment"
+        #                        1          2
+        p[0] = adl.syntaxtree.NamedAssignments(p[1], [p[2]], **self.pos(p, 1))
 
     def p_namedassignments_extend(self, p):
         "namedassignments : namedassignments assignment"

@@ -15,7 +15,7 @@ class ADLLexer(object):
                 "vary":    "VARY"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
-              "COLONEQ", "COLON", "LEFTARROW", "RIGHTARROW",
+              "COLONEQ", "LEFTARROW", "RIGHTARROW",
               "OR", "AND", "NOT", "COUNT", "PROFILE", "WEIGHT", "VARY",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
@@ -49,7 +49,6 @@ class ADLLexer(object):
         return t
 
     t_COLONEQ      = r":="
-    t_COLON        = r":"
     t_LEFTARROW    = r"<-"
     t_RIGHTARROW   = r"->"
     t_OR           = r"or"

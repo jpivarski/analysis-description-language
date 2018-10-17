@@ -13,27 +13,26 @@ class Storage(object): pass
 
 class Binning(object):
     @staticmethod
-    def binning(call):
+    def binning(call, storage):
         if isinstance(call, Call) and call.function.name == "regular":
             adl.util.check_args(call, 3, 3)
             if not isinstance(call.arguments[0], Literal) and adl.util.isint(call.arguments[0].value, 1):
                 raise adl.error.ADLTypeError("numbins must be a literal positive integer", call.arguments[0])
             if not isinstance(call.arguments[1], Literal) and adl.util.isnum(call.arguments[1].value):
-                raise adl.error.ADLTypeError("numbins must be a literal number", call.arguments[1])
+                raise adl.error.ADLTypeError("low must be a literal number", call.arguments[1])
             if not isinstance(call.arguments[2], Literal) and adl.util.isnum(call.arguments[2].value):
-                raise adl.error.ADLTypeError("numbins must be a literal number", call.arguments[2])
+                raise adl.error.ADLTypeError("high must be a literal number", call.arguments[2])
+            return RegularBinning(call.arguments[0].value, call.arguments[1].value, call.arguments[2].value, storage)
 
-            numbins, low, high = call.arguments[0].value, call.arguments[1].value, call.arguments[2].value
-            bins = [0] * (numbins + 3)
-            binning = lambda x: 
+        elif isinstance(call, Call) and call.function.name == "variable":
+            adl.util.check_args(call, 1, None)
+            for x in call.arguments:
+                if not adl.util.isnum(x.value):
+                    raise adl.error.ADLTypeError("edges must be literal numbers", x)
+            return VariableBinning([x.value for x in call.arguments], storage)
 
-        if isinstance(call, Call) and call.function.name == "variable":
-            adl.util.check_args(call, 1)
-
-
-
-
-        raise ADLTypeError("not a binning", call)
+        else:
+            raise ADLTypeError("not a binning", call)
 
 class RegularBinning(Binning):
     def __init__(self, numbins, low, high, storage):

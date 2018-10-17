@@ -31,28 +31,79 @@ class ADLParser(object):
                 "lineno2": p2.lineno,
                 "col_offset2": p2.col_offset}
 
-    def p_body_expression(self, p):
-        "body : expression"
-        #                1
+    def require_separator(self, left, right):
+        if "\n" not in left.source[left.rightmost().lexspan[1]:right.leftmost().lexspan[0]]:
+            raise adl.error.ADLSyntaxError("missing semicolon or newline", left.source, right.leftmost().lineno, right.leftmost().col_offset)
+
+    def p_block_expression(self, p):
+        "block : expression"
+        #                 1
         p[0] = [p[1]]
 
-    def p_body_assignment_single(self, p):
-        "body : assignment"
-        #                1
+    def p_block_count(self, p):
+        "block : count"
+        #            1
         p[0] = [p[1]]
 
-    def p_body_assignment_extend(self, p):
-        "body : assignment body"
-        #                1    2
-        if "\n" in p[1].source[p[1].rightmost().lexspan[1]:p[2][0].leftmost().lexspan[0]]:
-            p[0] = [p[1]] + p[2]
-        else:
-            raise adl.error.ADLSyntaxError("missing semicolon or newline", p[1].source, p[2][0].leftmost().lineno, p[2][0].leftmost().col_offset)
+    def p_block_count_extend(self, p):
+        "block : count block"
+        #            1     2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
 
-    def p_body_assignment_extend_semi(self, p):
-        "body : assignment SEMICOLON body"
-        #                1         2    3
+    def p_block_count_extend(self, p):
+        "block : count SEMICOLON block"
+        #            1         2     3
         p[0] = [p[1]] + p[3]
+
+    def p_block_assignment_extend(self, p):
+        "block : assignment block"
+        #                 1     2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_block_assignment_extend_semi(self, p):
+        "block : assignment SEMICOLON block"
+        #                 1         2     3
+        p[0] = [p[1]] + p[3]
+
+
+
+    def p_count(self, p):
+        "count : COUNT string"
+        #            1      2
+        p[0] = adl.syntaxtree.Count(p[2], [], None, **self.pos(p, 1))
+
+    def p_count_weight(self, p):
+        "count : COUNT string WEIGHT expression"
+        #            1      2      3          4
+        p[0] = adl.syntaxtree.Count(p[2], [], p[4], **self.pos(p, 1))
+
+    def p_count_histogram(self, p):
+        "count : COUNT string histogram"
+        #            1      2         3
+        p[0] = adl.syntaxtree.Count(p[2], p[3], None, **self.pos(p, 1))
+
+    def p_count_histogramweight(self, p):
+        "count : COUNT string histogramweight"
+        #            1      2               3
+        histogram, weight = p[3]
+        p[0] = adl.syntaxtree.Count(p[2], histogram, weight, **self.pos(p, 1))
+
+    def p_histogramweight(self, p):
+        "histogramweight : histogram WEIGHT expression"
+        #                          1      2          3
+        p[0] = p[1], p[3]
+        
+    def p_histogram_single(self, p):
+        "histogram : call LEFTARROW expression"
+        #               1         2          3
+        p[0] = [adl.syntaxtree.Axis(p[1], p[3], **self.pos(p, 2))]
+
+    def p_histogram_extend(self, p):
+        "histogram : histogram call LEFTARROW expression"
+        #                    1    2         3          4
+        p[0] = p[1] + [adl.syntaxtree.Axis(p[2], p[4], **self.pos(p, 3))]
 
     def p_assignment(self, p):
         "assignment : IDENTIFIER COLONEQ expression"
@@ -64,15 +115,10 @@ class ADLParser(object):
         #                1       2          3
         p[0] = adl.syntaxtree.Assign(p[1], p[3], **self.pos(p, 2))
 
-    def p_assignment_call_body(self, p):
-        "assignment : call COLONEQ OPENCURLY body CLOSECURLY"
-        #                1       2         3    4          5
+    def p_assignment_call_block(self, p):
+        "assignment : call COLONEQ OPENCURLY block CLOSECURLY"
+        #                1       2         3     4          5
         p[0] = adl.syntaxtree.Assign(p[1], p[4], **self.pos(p, 2))
-
-    def p_expression_logicalor(self, p):
-        "expression : logicalor"
-        #                     1
-        p[0] = p[1]
 
     def p_inline_identifier(self, p):
         "inline : IDENTIFIER RIGHTARROW expression"
@@ -89,34 +135,34 @@ class ADLParser(object):
         #                 1       2          3          4          5
         p[0] = adl.syntaxtree.Inline(p[2], p[5], **self.pos(p, 4))
 
-    def p_logicalor(self, p):
-        "logicalor : logicaland"
-        #                     1
+    def p_expression(self, p):
+        "expression : andchain"
+        #                    1
         p[0] = p[1]
 
-    def p_logicalor_(self, p):
-        "logicalor : logicaland OR logicaland"
-        #                     1  2          3
+    def p_expression_(self, p):
+        "expression : andchain OR andchain"
+        #                    1  2        3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Or(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
-    def p_logicaland(self, p):
-        "logicaland : logicalnot"
-        #                      1
+    def p_andchain(self, p):
+        "andchain : notchain"
+        #                  1
         p[0] = p[1]
 
-    def p_logicaland_(self, p):
-        "logicaland : logicalnot AND logicalnot"
-        #                      1   2          3
+    def p_andchain_(self, p):
+        "andchain : notchain AND notchain"
+        #                  1   2        3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
-    def p_logicalnot(self, p):
-        "logicalnot : compare"
-        #                   1
+    def p_notchain(self, p):
+        "notchain : compare"
+        #                 1
         p[0] = p[1]
 
-    def p_logicalnot_(self, p):
-        "logicalnot : NOT compare"
-        #               1       2
+    def p_notchain_(self, p):
+        "notchain : NOT compare"
+        #             1       2
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Not(**self.pos(p, 1)), [p[2]], **self.pos(p, 1))
 
     def p_compare(self, p):
@@ -285,14 +331,19 @@ class ADLParser(object):
         #               1    2          3
         p[0] = p[2]
 
-    def p_atom_literal_multilinestring(self, p):
-        "atom : MULTILINESTRING"
-        #                     1
+    def p_atom_literal_string(self, p):
+        "atom : string"
+        #            1
+        p[0] = p[1]
+
+    def p_string_literal_multilinestring(self, p):
+        "string : MULTILINESTRING"
+        #                       1
         p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
 
-    def p_atom_literal_string(self, p):
-        "atom : STRING"
-        #            1
+    def p_string_literal_string(self, p):
+        "string : STRING"
+        #              1
         p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
 
     def p_atom_literal_floatnumber(self, p):
@@ -336,7 +387,10 @@ class ADLParser(object):
         p[0] = [p[1]]
 
     def p_error(self, p):
-        raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
+        if p is None:
+            raise adl.error.ADLError("an ADL source file/string must end in an expression or an aggregation")
+        else:
+            raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 
     def build(self, **kwargs):
         self.parser = ply.yacc.yacc(module=self, **kwargs)

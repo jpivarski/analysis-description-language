@@ -129,3 +129,37 @@ class Assign(AST):
 
     def rightmost(self):
         return self.expression.rightmost()
+
+class Axis(AST):
+    def __init__(self, binning, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Axis, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.binning = binning
+        self.expression = expression
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.binning), repr(self.expression))
+
+    def leftmost(self):
+        return self.binning.leftmost()
+
+    def rightmost(self):
+        return self.expression.rightmost()
+
+class Count(AST):
+    def __init__(self, name, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Count, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.axes = axes
+        self.weight = weight
+
+    def __repr__(self):
+        return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.axes), repr(self.weight))
+
+    def leftmost(self):
+        return self.axes[0].leftmost()
+
+    def rightmost(self):
+        if self.weight is None:
+            return self.axes[-1].leftmost()
+        else:
+            return self.weight.rightmost()

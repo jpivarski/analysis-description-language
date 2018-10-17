@@ -342,9 +342,9 @@ class ADLParser(object):
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Identifier(p[3])], **self.pos(p, 2))
 
     def p_trailer_subscript(self, p):
-        "trailer : trailer OPENBRACKET trailer CLOSEBRACKET"
+        "trailer : trailer OPENBRACKET arglist CLOSEBRACKET"
         #                1           2       3            4
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Subscript(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Subscript(**self.pos(p, 2)), [p[1]] + p[3], **self.pos(p, 2))
 
     def p_trailer_call(self, p):
         "trailer : call"

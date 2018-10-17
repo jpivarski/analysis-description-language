@@ -11,7 +11,7 @@ class ADLLexer(object):
                 "not": "NOT"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
-              "COLONEQ",
+              "COLONEQ", "RIGHTARROW",
               "OR", "AND", "NOT",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
@@ -45,6 +45,7 @@ class ADLLexer(object):
         return t
 
     t_COLONEQ      = r":="
+    t_RIGHTARROW   = r"=>"
     t_OR           = r"or"
     t_AND          = r"and"
     t_NOT          = r"not"

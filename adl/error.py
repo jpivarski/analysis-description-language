@@ -19,4 +19,4 @@ class ADLSourceError(ADLError):
             quoted = "\n    ".join(source.split("\n")[lineno - 1 : lineno2])
             super(ADLSourceError, self).__init__(message + "\n    " + quoted)
 
-class ADLSyntaxError(ADLError): pass
+class ADLSyntaxError(ADLSourceError): pass

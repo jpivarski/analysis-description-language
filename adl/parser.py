@@ -69,10 +69,25 @@ class ADLParser(object):
         #                1       2         3    4          5
         p[0] = adl.syntaxtree.Assign(p[1], p[4], **self.pos(p, 2))
 
-    def p_expression(self, p):
+    def p_expression_logicalor(self, p):
         "expression : logicalor"
         #                     1
         p[0] = p[1]
+
+    def p_inline_identifier(self, p):
+        "inline : IDENTIFIER RIGHTARROW expression"
+        #                  1          2          3
+        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))], p[3], **self.pos(p, 2))
+
+    def p_inline_identifier_(self, p):
+        "inline : OPENPAREN IDENTIFIER CLOSEPAREN RIGHTARROW expression"
+        #                 1          2          3          4          5
+        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[2], **self.pos(p, 2))], p[5], **self.pos(p, 4))
+
+    def p_inline_arglist(self, p):
+        "inline : OPENPAREN arglist CLOSEPAREN RIGHTARROW expression"
+        #                 1       2          3          4          5
+        p[0] = adl.syntaxtree.Inline(p[2], p[5], **self.pos(p, 4))
 
     def p_logicalor(self, p):
         "logicalor : logicaland"
@@ -295,19 +310,29 @@ class ADLParser(object):
         #                1
         p[0] = adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))
 
+    def p_arg_expression(self, p):
+        "arg : expression"
+        #               1
+        p[0] = p[1]
+
+    def p_arg_inline(self, p):
+        "arg : inline"
+        #           1
+        p[0] = p[1]
+
     def p_arglist_single(self, p):
-        "arglist : expression"
-        #                   1
+        "arglist : arg"
+        #            1
         p[0] = [p[1]]
 
     def p_arglist_extend(self, p):
-        "arglist : expression COMMA arglist"
-        #                   1     2       3
+        "arglist : arg COMMA arglist"
+        #            1     2       3
         p[0] = [p[1]] + p[3]
 
     def p_arglist_extra_comma(self, p):    # optional: for trailing commas f(x, y,)
-        "arglist : expression COMMA"
-        #                   1     2
+        "arglist : arg COMMA"
+        #            1     2
         p[0] = [p[1]]
 
     def p_error(self, p):

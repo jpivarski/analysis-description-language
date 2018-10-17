@@ -100,6 +100,21 @@ class Call(AST):
         else:
             return self.function.rightmost()
 
+class Inline(AST):
+    def __init__(self, parameters, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Inline, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.parameters = parameters
+        self.expression = expression
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.parameters), repr(self.expression))
+
+    def leftmost(self):
+        return self.parameters[0].leftmost()
+
+    def rightmost(self):
+        return self.expression.rightmost()
+
 class Assign(AST):
     def __init__(self, target, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Assign, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)

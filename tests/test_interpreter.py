@@ -132,3 +132,20 @@ class Test(unittest.TestCase):
         assert run["stuff"].value() == 0.25
         assert round(run["stuff"].error(), 3) == 0.465
         assert round(run["stuff"].error("wilson"), 3) == 0.707
+
+    def test_source(self):
+        run = adl.interpreter.Run("source 'A' { y := x }")
+        assert "y" in run("A", x=[1, 2, 3])
+        assert "y" not in run("B", x=[1, 2, 3])
+
+        run = adl.interpreter.Run("not source 'A' { y := x }")
+        assert "y" not in run("A", x=[1, 2, 3])
+        assert "y" in run("B", x=[1, 2, 3])
+
+        run = adl.interpreter.Run("source 'A', 'B' { y := x }")
+        assert "y" in run("A", x=[1, 2, 3])
+        assert "y" in run("B", x=[1, 2, 3])
+
+        run = adl.interpreter.Run("not source 'A', 'B' { y := x }")
+        assert "y" not in run("A", x=[1, 2, 3])
+        assert "y" not in run("B", x=[1, 2, 3])

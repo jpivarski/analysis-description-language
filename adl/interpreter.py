@@ -23,7 +23,7 @@ def calculate(expression, symboltable):
     else:
         raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)
 
-def handle(statement, symboltable, source, aggregation):
+def handle(statement, source, symboltable, aggregation):
     if isinstance(statement, Define):
         symboltable[statement.target] = calculate(statement.expression, symboltable)
 
@@ -44,7 +44,16 @@ def handle(statement, symboltable, source, aggregation):
         raise NotImplementedError
 
     elif isinstance(statement, Source):
-        raise NotImplementedError
+        if source is None:
+            accept = True
+        else:
+            accept = any(fnmatch.fnmatchcase(source, x.value) for x in statement.names)
+            if not statement.inclusive:
+                accept = not accept
+
+        if accept:
+            for x in statement.block:
+                handle(x, source, symboltable, aggregation)
 
     else:
         raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
@@ -55,7 +64,8 @@ def initialize(statement, name, aggregation):
             initialize(x, name, aggregation)
 
     elif isinstance(statement, Source):
-        raise NotImplementedError
+        for x in statement.block:
+            initialize(x, name, aggregation)
 
     elif isinstance(statement, Region):
         raise NotImplementedError
@@ -495,7 +505,7 @@ class Run(object):
     def single(self, source=None, **data):
         symboltable = SymbolTable.root(self.builtins, data)
         for statement in self.ast.statements:
-            handle(statement, symboltable, source, self.aggregation)
+            handle(statement, source, symboltable, self.aggregation)
         return symboltable.symbols
 
     def __getitem__(self, where):

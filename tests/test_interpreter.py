@@ -125,3 +125,10 @@ class Test(unittest.TestCase):
         assert tuple(run["stuff"].underflow) == (0.0, 0.0)
         assert tuple(run["stuff"].overflow) == (0.0, 0.0)
         assert tuple(run["stuff"].nanflow) == (0.0, 0.0)
+
+    def test_fraction(self):
+        run = adl.interpreter.Run("fraction 'stuff' x")
+        run(x=[False, False, True, False])
+        assert run["stuff"].value() == 0.25
+        assert round(run["stuff"].error(), 3) == 0.465
+        assert round(run["stuff"].error("wilson"), 3) == 0.707

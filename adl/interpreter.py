@@ -74,7 +74,7 @@ def initialize(statement, name, aggregation):
         elif isinstance(statement.statistic, ProfileStatistic):
             storage = Profile(name, statement.expression)
         elif isinstance(statement.statistic, FractionStatistic):
-            raise NotImplementedError
+            storage = Fraction(name, statement.expression)
         else:
             raise adl.error.ADLInternalError("{0} is not a collectable statistic".format(type(statement.statistic).__name__), statement.statistic)
 
@@ -147,14 +147,19 @@ class Count(Storage):
         self.sumw += weight
         self.sumw2 += weight**2
 
-    def value(self):
+    def value(self, indeterminate=0.0):
         return self.sumw
 
-    def error2(self):
-        return self.sumw2
+    def error2(self, method="normal", sigmas=1, indeterminate=0.0):
+        if method == "normal":
+            return sigmas**2 * self.sumw2
+        elif method == "poisson":
+            raise NotImplementedError
+        else:
+            raise ValueError("unrecognized method: {0}".format(repr(method)))
 
-    def error(self):
-        return math.sqrt(self.sumw2)
+    def error(self, method="normal", sigmas=1, indeterminate=0.0):
+        return math.sqrt(self.error2(method=method, sigmas=sigmas, indeterminate=indeterminate))
 
     def __iter__(self):
         yield self.value()
@@ -175,7 +180,7 @@ class Sum(Storage):
     def fill(self, symboltable, weight):
         self.sumwx += weight * self.calculate(symboltable)
 
-    def value(self):
+    def value(self, indeterminate=0.0):
         return self.sumwx
 
     def __iter__(self):
@@ -203,25 +208,89 @@ class Profile(Storage):
         self.sumwx += weight * x
         self.sumwx2 += weight * x**2
 
-    def value(self):
+    def value(self, indeterminate=0.0):
         if self.sumw == 0:
-            return 0.0
+            return indeterminate
         else:
             return self.sumwx / self.sumw
 
-    def error2(self):
-        if self.sumw2 == 0:
-            return 0.0
+    def error2(self, method="normal", sigmas=1, indeterminate=0.0):
+        if method == "normal":
+            if self.sumw2 == 0:
+                return indeterminate
+            else:
+                effectivecount = self.sumw**2 / self.sumw2
+                return sigmas**2 * (self.sumwx2 / self.sumw - self.value()**2) / effectivecount
         else:
-            effectivecount = self.sumw**2 / self.sumw2
-            return (self.sumwx2 / self.sumw - self.value()**2) / effectivecount
+            raise ValueError("unrecognized method: {0}".format(repr(method)))
 
-    def error(self):
-        return math.sqrt(self.error2())
+    def error(self, method="normal", sigmas=1, indeterminate=0.0):
+        return math.sqrt(self.error2(method=method, sigmas=sigmas, indeterminate=indeterminate))
 
     def __iter__(self):
         yield self.value()
         yield self.error()
+
+class Fraction(Storage):
+    def __init__(self, name, expression):
+        self.name = name
+        self.expression = expression
+        self.numerw = 0.0
+        self.denomw = 0.0
+
+    def zeros_like(self, name):
+        return Fraction(name, self.expression)
+
+    def __repr__(self):
+        return "<Fraction {0}: {1} +- {2}>".format(", ".join(repr(x) for x in self.name), self.value(), self.error())
+
+    def fill(self, symboltable, weight):
+        x = calculate(self.expression, symboltable)
+        if x is not True and x is not False:
+            raise adl.error.ADLTypeError("predicate returned a non-boolean: {0}".format(x), self.expression)
+        if x:
+            self.numerw += weight
+        self.denomw += weight
+
+    def value(self, indeterminate=0.0):
+        if self.denomw == 0:
+            return indeterminate
+        else:
+            return self.numerw / self.denomw
+
+    def error2(self, method="normal", sigmas=1, indeterminate=0.0):
+        if self.denomw == 0:
+            return indeterminate
+        p = self.numerw / self.denomw
+        if not 0 <= p <= 1:
+            return indeterminate
+
+        if method == "normal":
+            return sigmas**2 * math.sqrt(p*(1.0 - p) / self.denomw)
+
+        elif method == "clopper-pearson":
+            raise NotImplementedError
+
+        elif method == "wilson":
+            return (p + 0.5*sigmas**2/self.denomw + sigmas*math.sqrt(p*(1.0 - p)/self.denomw + 0.25*sigmas**2/self.denomw**2)) / (1.0 + sigmas**2/self.denomw)
+
+        elif method == "agresti-coull":
+            raise NotImplementedError
+
+        elif method == "feldman-cousins":
+            raise NotImplementedError
+
+        elif method == "jeffrey":
+            raise NotImplementedError
+
+        elif method == "bayesian-uniform":
+            raise NotImplementedError
+
+        else:
+            raise ValueError("unrecognized method: {0}".format(repr(method)))
+
+    def error(self, method="normal", sigmas=1, indeterminate=0.0):
+        return math.sqrt(self.error2(method=method, sigmas=sigmas, indeterminate=indeterminate))
 
 class Binning(object):
     @staticmethod

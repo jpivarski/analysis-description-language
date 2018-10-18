@@ -59,6 +59,9 @@ def handle(statement, symbols, source, aggregation):
     elif isinstance(statement, Count):
         raise NotImplementedError
 
+    elif isinstance(statement, Sum):
+        raise NotImplementedError
+
     elif isinstance(statement, Profile):
         raise NotImplementedError
 
@@ -263,6 +266,9 @@ def aggregation(node, namespace):
             namespace[node.name.value] = Counter()
         else:
             raise NotImplementedError
+
+    elif isinstance(node, Sum):
+        raise NotImplementedError
 
     elif isinstance(node, Profile):
         raise NotImplementedError

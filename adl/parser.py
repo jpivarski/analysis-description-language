@@ -164,6 +164,22 @@ class ADLParser(object):
         #            1         2     3
         p[0] = [p[1]] + p[3]
 
+    def p_block_sum(self, p):
+        "block : sum"
+        #              1
+        p[0] = [p[1]]
+
+    def p_block_extend_sum(self, p):
+        "block : sum block"
+        #              1     2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_block_extend_sum_semi(self, p):
+        "block : sum SEMICOLON block"
+        #              1         2     3
+        p[0] = [p[1]] + p[3]
+
     def p_block_profile(self, p):
         "block : profile"
         #              1
@@ -223,6 +239,17 @@ class ADLParser(object):
         #           1         2    3
         p[0] = [p[1]] + p[3]
 
+    def p_body_extend_sum(self, p):
+        "body : sum body"
+        #             1    2
+        self.require_separator(p[1], p[2][0])
+        p[0] = [p[1]] + p[2]
+
+    def p_body_extend_sum_semi(self, p):
+        "body : sum SEMICOLON body"
+        #             1         2    3
+        p[0] = [p[1]] + p[3]
+
     def p_body_extend_profile(self, p):
         "body : profile body"
         #             1    2
@@ -276,6 +303,27 @@ class ADLParser(object):
         #            1      2          3
         axis, weight = p[3]
         p[0] = adl.syntaxtree.Count(p[2], axis, weight, **self.pos(p, 1))
+
+    def p_sum(self, p):
+        "sum : SUM string expression"
+        #                1      2          3
+        p[0] = adl.syntaxtree.Sum(p[2], p[3], [], None, **self.pos(p, 1))
+
+    def p_sum_weight(self, p):
+        "sum : SUM string expression WEIGHT expression"
+        #                1      2          3      4          5
+        p[0] = adl.syntaxtree.Sum(p[2], p[3], [], p[5], **self.pos(p, 1))
+
+    def p_sum_axis(self, p):
+        "sum : SUM string expression axis"
+        #                1      2          3    4
+        p[0] = adl.syntaxtree.Sum(p[2], p[3], p[4], None, **self.pos(p, 1))
+
+    def p_sum_axisweight(self, p):
+        "sum : SUM string expression axisweight"
+        #                1      2          3          4
+        axis, weight = p[4]
+        p[0] = adl.syntaxtree.Sum(p[2], p[3], axis, weight, **self.pos(p, 1))
 
     def p_profile(self, p):
         "profile : PROFILE string expression"

@@ -10,6 +10,7 @@ class ADLLexer(object):
                 "or":       "OR",
                 "not":      "NOT",
                 "count":    "COUNT",
+                "sum":      "SUM",
                 "profile":  "PROFILE",
                 "fraction": "FRACTION",
                 "weight":   "WEIGHT",
@@ -20,7 +21,7 @@ class ADLLexer(object):
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "COLONEQ", "LEFTARROW", "RIGHTARROW",
-              "OR", "AND", "NOT", "COUNT", "PROFILE", "FRACTION", "WEIGHT", "VARY", "REGION", "REGIONS", "SOURCE",
+              "OR", "AND", "NOT", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "VARY", "REGION", "REGIONS", "SOURCE",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",

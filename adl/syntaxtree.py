@@ -319,6 +319,47 @@ class Count(Statement):
         if not topdown:
             yield self
 
+class Sum(Statement):
+    def __init__(self, name, expression, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Sum, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.expression = expression
+        self.axes = axes
+        self.weight = weight
+
+    def __repr__(self):
+        return "{0}({1}, {2}, {3}, {4})".format(type(self).__name__, repr(self.name), repr(self.expression), repr(self.axes), repr(self.weight))
+
+    def children(self):
+        return [self.name, self.expression] + self.axes + ([self.weight] if self.weight is not None else [])
+
+    def leftmost(self):
+        return self.name.leftmost()
+
+    def rightmost(self):
+        if self.weight is None and len(self.axes) == 0:
+            return self.expression.rightmost()
+        elif self.weight is None:
+            return self.axes[-1].rightmost()
+        else:
+            return self.weight.rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.expression.walk(topdown=topdown):
+            yield x
+        for x in self.axes:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if self.weight is not None:
+            for x in self.weight.walk(topdown=topdown):
+                yield x
+        if not topdown:
+            yield self
+
 class Profile(Statement):
     def __init__(self, name, expression, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Profile, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)

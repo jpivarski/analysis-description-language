@@ -9,7 +9,7 @@ import adl.error
 import adl.parser
 import adl.util
 from adl.syntaxtree import *
-            
+
 def calculate(expression, symboltable):
     if isinstance(expression, Literal):
         return expression.value
@@ -18,8 +18,18 @@ def calculate(expression, symboltable):
         return symboltable[expression]
 
     elif isinstance(expression, Call):
-        raise NotImplementedError
+        values = [calculate(x, symboltable) for x in expression.arguments]
 
+        if isinstance(expression.function, Special) and expression.function in Run.special:
+            for signature, function in Run.special[expression.function]:
+                if signature(values, expression):
+                    return function(*values)
+
+        if isinstance(expression.function, Expression):
+            return calculate(expression.function, symboltable)(*values)
+        else:
+            raise adl.error.ADLInternalError("cannot apply a {0}; it is not an expression".format(type(expression.function).__name__), expression.function)
+        
     else:
         raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)
 
@@ -36,7 +46,7 @@ def handle(statement, source, symboltable, aggregation):
         else:
             weight = calculate(statement.weight, symboltable)
         aggregation[statement.name.value].fill(symboltable, weight)
-        
+
     elif isinstance(statement, Vary):
         for variation in statement.variations:
             subtable = SymbolTable(symboltable)
@@ -507,6 +517,7 @@ class Namespace(object):
 
 class Run(object):
     builtins = {}
+    special = {}
 
     def __init__(self, code):
         if isinstance(code, str):
@@ -534,7 +545,7 @@ class Run(object):
             assert all(x == lengths[0] for x in lengths)
         except (TypeError, AssertionError):
             return self.single(source=source, **data)
-        
+
         out = None
         for i in range(lengths[0]):
             single = self.single(source=source, **{n: x[i] for n, x in data.items()})
@@ -553,3 +564,78 @@ class Run(object):
 
     def __getitem__(self, where):
         return self.aggregation[where]
+
+def typerequire(*types):
+    def out(values, expression):
+        if len(expression.arguments) != len(types):
+            raise adl.error.ADLTypeError("expected {0} arguments, found {1}".format(len(types), len(expression.arguments)))
+        for val, arg, tpe in zip(values, expression.arguments, types):
+            if tpe is bool and value is not True and value is not False:
+                raise adl.error.ADLTypeError("value is not a boolean: {0}".format(repr(val), arg))
+            elif tpe is float and not isinstance(x, (numbers.Real, numpy.integer, numpy.floating)):
+                raise adl.error.ADLTypeError("value is not a number: {0}".format(repr(val), arg))
+            elif tpe is int and not isinstance(x, (numbers.Integral, numpy.integer)):
+                raise adl.error.ADLTypeError("value is not an integer: {0}".format(repr(val), arg))
+        return True
+    return out
+
+def typetest(*types):
+    def out(values, expression):
+        if len(expression.arguments) != len(types):
+            return False
+        for val, arg, tpe in zip(values, expression.arguments, types):
+            if tpe is bool and value is not True and value is not False:
+                return False
+            elif tpe is float and not isinstance(x, (numbers.Real, numpy.integer, numpy.floating)):
+                return False
+            elif tpe is int and not isinstance(x, (numbers.Integral, numpy.integer)):
+                return False
+        return True
+    return out
+
+Run.special[Attribute]  = []
+Run.special[Subscript]  = []
+Run.special[Or]         = []
+Run.special[And]        = []
+Run.special[Not]        = []
+Run.special[IsEqual]    = []
+Run.special[NotEqual]   = []
+Run.special[LessEq]     = []
+Run.special[Less]       = []
+Run.special[GreaterEq]  = []
+Run.special[Greater]    = []
+Run.special[Plus]       = []
+Run.special[Minus]      = []
+Run.special[Times]      = []
+Run.special[Div]        = []
+Run.special[Mod]        = []
+Run.special[UnaryPlus]  = []
+Run.special[UnaryMinus] = []
+Run.special[Power]      = []
+
+def dodot(obj, attr):
+    try:
+        return obj[attr]
+    except:
+        return getattr(obj, attr)
+
+Run.special[Attribute] .append((lambda values, expression: True,             dodot))
+Run.special[Subscript] .append((lambda values, expression: len(values) == 2, lambda x, i: x[i]))
+Run.special[Subscript] .append((lambda values, expression: True,             lambda x, *args: x[args]))
+Run.special[Or]        .append((typerequire(bool, bool),                     lambda x, y: x or y))
+Run.special[And]       .append((typerequire(bool, bool),                     lambda x, y: x and y))
+Run.special[Not]       .append((typerequire(bool),                           lambda x: not x))
+Run.special[IsEqual]   .append((lambda values, expression: True,             lambda x, y: x == y))
+Run.special[NotEqual]  .append((lambda values, expression: True,             lambda x, y: x != y))
+Run.special[LessEq]    .append((typerequire(float, float),                   lambda x, y: x <= y))
+Run.special[Less]      .append((typerequire(float, float),                   lambda x, y: x < y))
+Run.special[GreaterEq] .append((typerequire(float, float),                   lambda x, y: x >= y))
+Run.special[Greater]   .append((typerequire(float, float),                   lambda x, y: x > y))
+Run.special[Plus]      .append((typerequire(float, float),                   lambda x, y: x + y))
+Run.special[Minus]     .append((typerequire(float, float),                   lambda x, y: x - y))
+Run.special[Times]     .append((typerequire(float, float),                   lambda x, y: x * y))
+Run.special[Div]       .append((typerequire(float, float),                   lambda x, y: float(x) / float(y)))
+Run.special[Mod]       .append((typerequire(float, float),                   lambda x, y: x % y))
+Run.special[UnaryPlus] .append((typerequire(float),                          lambda x: +x))
+Run.special[UnaryMinus].append((typerequire(float),                          lambda x: -x))
+Run.special[Power]     .append((typerequire(float, float),                   lambda x, y: x**y))

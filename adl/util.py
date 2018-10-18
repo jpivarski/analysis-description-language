@@ -31,9 +31,9 @@ def isnan(x):
     return numpy.isnan(x)
 
 def check_args(call, min=0, max=None):
-    if len(arguments) < min:
+    if len(call.arguments) < min:
         raise adl.error.ADLTypeError("too few arguments: at least {0} required".format(min), call)
-    if max is not None and len(arguments) > max:
+    if max is not None and len(call.arguments) > max:
         raise adl.error.ADLTypeError("too many arguments: no more than {0} allowed".format(max), call)
 
 def check_params(call):

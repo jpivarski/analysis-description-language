@@ -31,9 +31,26 @@ def handle(statement, symboltable, source, aggregation):
         raise NotImplementedError
 
     elif isinstance(statement, Collect):
-        weight = 1
-        aggregation[statement.name.value].fill(symboltable, weight)
+        if statement.weight is None:
+            weight = 1
+        else:
+            weight = calculate(statement.weight, symboltable)
 
+        if isinstance(statement.statistic, Count):
+            aggregation[statement.name.value].fill(symboltable, weight)
+
+        elif isinstance(statement.statistic, Sum):
+            raise NotImplementedError
+
+        elif isinstance(statement.statistic, Profile):
+            raise NotImplementedError
+
+        elif isinstance(statement.statistic, Fraction):
+            raise NotImplementedError
+
+        else:
+            raise adl.error.ADLInternalError("{0} is not a collectable statistic".format(type(statement).__name__), statement.statistic)
+        
     elif isinstance(statement, Vary):
         raise NotImplementedError
 
@@ -46,41 +63,47 @@ def handle(statement, symboltable, source, aggregation):
     else:
         raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
 
-def initialize(node, aggregation):
-    if isinstance(node, Suite):
-        for x in node.statements:
+def initialize(statement, aggregation):
+    if isinstance(statement, Suite):
+        for x in statement.statements:
             initialize(x, aggregation)
 
-    elif isinstance(node, Source):
+    elif isinstance(statement, Source):
         raise NotImplementedError
 
-    elif isinstance(node, Region):
+    elif isinstance(statement, Region):
         raise NotImplementedError
 
-    elif isinstance(node, Vary):
+    elif isinstance(statement, Vary):
         raise NotImplementedError
 
-    elif isinstance(node, Collect):
-        adl.util.check_name(node, aggregation)
-        if isinstance(node.statistic, Count) and len(node.axes) == 0:
-            aggregation[node.name.value] = Counter()
-        else:
+    elif isinstance(statement, Collect):
+        adl.util.check_name(statement, aggregation)
+
+        if isinstance(statement.statistic, Count):
+            storage = Counter()
+            for axis in statement.axes[::-1]:
+                storage = Binning.binning(axis.binning, axis.expression, storage)
+
+        elif isinstance(statement.statistic, Sum):
             raise NotImplementedError
 
-    elif isinstance(node, Sum):
-        raise NotImplementedError
+        elif isinstance(statement.statistic, Profile):
+            raise NotImplementedError
 
-    elif isinstance(node, Profile):
-        raise NotImplementedError
+        elif isinstance(statement.statistic, Fraction):
+            raise NotImplementedError
 
-    elif isinstance(node, Fraction):
-        raise NotImplementedError
+        else:
+            raise adl.error.ADLInternalError("{0} is not a collectable statistic".format(type(statement).__name__), statement.statistic)
 
-    elif isinstance(node, (Expression, Statement)):
+        aggregation[statement.name.value] = storage
+
+    elif isinstance(statement, Statement):
         pass
 
     else:
-        raise adl.error.ADLInternalError("cannot initialize {0}; it is not an aggregation".format(type(node).__name__), node)
+        raise adl.error.ADLInternalError("cannot initialize {0}; it is not a statement".format(type(statement).__name__), statement)
 
 class SymbolTable(object):
     @classmethod
@@ -176,6 +199,8 @@ class RegularBinning(Binning):
         return numpy.linspace(self.low, self.high, self.numbins + 1).tolist()
 
     def __getitem__(self, where):
+        if where == ():
+            return self
         if not isinstance(where, tuple):
             where = (where,)
         head, tail = where[0], where[1:]
@@ -221,6 +246,8 @@ class VariableBinning(Binning):
         return len(self.edges) - 1
 
     def __getitem__(self, where):
+        if where == ():
+            return self
         if not isinstance(where, tuple):
             where = (where,)
         head, tail = where[0], where[1:]
@@ -256,6 +283,8 @@ class Namespace(object):
         self.values = {}
 
     def __getitem__(self, where):
+        if where == ():
+            return self
         if not isinstance(where, tuple):
             where = (where,)
         head, tail = where[0], where[1:]

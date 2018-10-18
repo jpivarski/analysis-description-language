@@ -7,34 +7,6 @@ import adl.error
 import adl.parser
 import adl.util
 from adl.syntaxtree import *
-    
-class SymbolTable(object):
-    @classmethod
-    def root(cls, functions, data):
-        out = SymbolTable()
-        for n, x in functions.items():
-            out[Identifier(n)] = x
-        for n, x in data.items():
-            out[Identifier(n)] = x
-        return out
-
-    def __init__(self, parent=None):
-        self.parent = None
-        self.symbols = {}
-
-    def __getitem__(self, where):
-        if where.name in self.symbols:
-            return self.symbols[where.name]
-        elif self.parent is not None:
-            return self.parent[where.name]
-        else:
-            raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.name)), where)
-
-    def __setitem__(self, where, what):
-        self.symbols[where.name] = what
-
-    def __contains__(self, where):
-        return where.name in self.symbols
             
 def calculate(expression, symbols):
     if isinstance(expression, Literal):
@@ -73,7 +45,74 @@ def handle(statement, symbols, source, aggregation):
 
     else:
         raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
-    
+
+def initialize(node, namespace):
+    if isinstance(node, Suite):
+        for x in node.statements:
+            initialize(x, namespace)
+
+    elif isinstance(node, Source):
+        raise NotImplementedError
+
+    elif isinstance(node, Region):
+        raise NotImplementedError
+
+    elif isinstance(node, Regions):
+        raise NotImplementedError
+
+    elif isinstance(node, Vary):
+        raise NotImplementedError
+
+    elif isinstance(node, Collect):
+        adl.util.check_name(node, namespace)
+        if isinstance(node.statistic, Count) and len(node.axes) == 0:
+            namespace[node.name.value] = Counter()
+        else:
+            raise NotImplementedError
+
+    elif isinstance(node, Sum):
+        raise NotImplementedError
+
+    elif isinstance(node, Profile):
+        raise NotImplementedError
+
+    elif isinstance(node, Fraction):
+        raise NotImplementedError
+
+    elif isinstance(node, (Expression, Statement)):
+        pass
+
+    else:
+        raise adl.error.ADLInternalError("cannot initialize {0}; it is not an aggregation".format(type(node).__name__), node)
+
+class SymbolTable(object):
+    @classmethod
+    def root(cls, functions, data):
+        out = SymbolTable()
+        for n, x in functions.items():
+            out[Identifier(n)] = x
+        for n, x in data.items():
+            out[Identifier(n)] = x
+        return out
+
+    def __init__(self, parent=None):
+        self.parent = None
+        self.symbols = {}
+
+    def __getitem__(self, where):
+        if where.name in self.symbols:
+            return self.symbols[where.name]
+        elif self.parent is not None:
+            return self.parent[where.name]
+        else:
+            raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.name)), where)
+
+    def __setitem__(self, where, what):
+        self.symbols[where.name] = what
+
+    def __contains__(self, where):
+        return where.name in self.symbols
+
 class Storage(object): pass
 
 class Counter(Storage):
@@ -230,45 +269,6 @@ class Namespace(object):
     def __contains__(self, where):
         return where in self.values
 
-def aggregation(node, namespace):
-    if isinstance(node, Suite):
-        for x in node.statements:
-            aggregation(x, namespace)
-
-    elif isinstance(node, Source):
-        raise NotImplementedError
-
-    elif isinstance(node, Region):
-        raise NotImplementedError
-
-    elif isinstance(node, Regions):
-        raise NotImplementedError
-
-    elif isinstance(node, Vary):
-        raise NotImplementedError
-
-    elif isinstance(node, Collect):
-        adl.util.check_name(node, namespace)
-        if isinstance(node.statistic, Count) and len(node.axes) == 0:
-            namespace[node.name.value] = Counter()
-        else:
-            raise NotImplementedError
-
-    elif isinstance(node, Sum):
-        raise NotImplementedError
-
-    elif isinstance(node, Profile):
-        raise NotImplementedError
-
-    elif isinstance(node, Fraction):
-        raise NotImplementedError
-
-    elif isinstance(node, (Expression, Statement)):
-        pass
-
-    else:
-        raise adl.error.ADLInternalError("cannot initialize {0}; it is not an aggregation".format(type(node).__name__), node)
-
 class Run(object):
     builtins = {}
 
@@ -281,7 +281,7 @@ class Run(object):
 
     def clear(self):
         self.aggregation = Namespace()
-        aggregation(self.ast, self.aggregation)
+        initialize(self.ast, self.aggregation)
 
     def __iter__(self, source=None, **data):
         if not isinstance(self.ast.statements[-1], Expression):
@@ -289,21 +289,25 @@ class Run(object):
         for i in range(min(len(x) for x in data.values())):
             yield self(source=source, **{n: x[i] for n, x in data.items()})
 
-    def fill(self, source=None, **data):
+    def run(self, source=None, **data):
+        if len(data) == 0:
+            return {}
+
+        out = None
         for i in range(min(len(x) for x in data.values())):
-            self(source=source, **{n: x[i] for n, x in data.items()})
+            single = self(source=source, **{n: x[i] for n, x in data.items()})
+            if out is None:
+                out = {n: [x] for n, x in single.items()}
+            else:
+                for n, x in single.items():
+                    out[n].append(x)
+        return out
 
     def __call__(self, source=None, **data):
         symbols = SymbolTable.root(self.builtins, data)
-
-        if isinstance(self.ast.statements[-1], Expression):
-            for statement in self.ast.statements[:-1]:
-                handle(statement, symbols, source, self.aggregation)
-            return calculate(self.ast.statements[-1], symbols)
-
-        else:
-            for statement in self.ast.statements:
-                handle(statement, symbols, source, self.aggregation)
+        for statement in self.ast.statements:
+            handle(statement, symbols, source, self.aggregation)
+        return {} # FIXME: return all the assigned non-functions
 
     def __getitem__(self, where):
         return self.aggregation[where]

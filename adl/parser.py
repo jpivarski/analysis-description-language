@@ -35,137 +35,12 @@ class ADLParser(object):
         if "\n" not in left.source[left.rightmost().lexspan[1]:right.leftmost().lexspan[0]]:
             raise adl.error.ADLSyntaxError("missing semicolon or newline", left.source, right.leftmost().lineno, right.leftmost().col_offset)
 
-    ###################################################### suite
+    ###################################################### suite (top-level entry point)
 
     def p_suite_expression(self, p):
-        "suite : expression"
-        #             1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_source(self, p):
-        "suite : source"
-        #             1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_source(self, p):
-        "suite : source suite"
-        #             1     2
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_notsource(self, p):
-        "suite : notsource"
-        #                1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_notsource(self, p):
-        "suite : notsource suite"
-        #                1     2
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_regions(self, p):
-        "suite : regions"
-        #              1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_regions(self, p):
-        "suite : regions suite"
-        #              1     2
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_region(self, p):
-        "suite : region"
-        #             1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_region(self, p):
-        "suite : region suite"
-        #             1     2
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_vary(self, p):
-        "suite : vary"
-        #           1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_vary(self, p):
-        "suite : vary suite"
-        #           1     2
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_count(self, p):
-        "suite : count"
+        "suite : block"
         #            1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_count(self, p):
-        "suite : count suite"
-        #            1     2
-        self.require_separator(p[1], p[2].statements[0])
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_extend_count_semi(self, p):
-        "suite : count SEMICOLON suite"
-        #            1         2     3
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
-
-    def p_suite_sum(self, p):
-        "suite : sum"
-        #          1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_sum(self, p):
-        "suite : sum suite"
-        #          1     2
-        self.require_separator(p[1], p[2].statements[0])
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_extend_sum_semi(self, p):
-        "suite : sum SEMICOLON suite"
-        #          1         2     3
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
-
-    def p_suite_profile(self, p):
-        "suite : profile"
-        #              1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_profile(self, p):
-        "suite : profile suite"
-        #              1     2
-        self.require_separator(p[1], p[2].statements[0])
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_extend_profile_semi(self, p):
-        "suite : profile SEMICOLON suite"
-        #              1         2     3
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
-
-    def p_suite_fraction(self, p):
-        "suite : fraction"
-        #               1
-        p[0] = adl.syntaxtree.Suite([p[1]])
-
-    def p_suite_extend_fraction(self, p):
-        "suite : fraction suite"
-        #               1     2
-        self.require_separator(p[1], p[2].statements[0])
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_extend_fraction_semi(self, p):
-        "suite : fraction SEMICOLON suite"
-        #               1         2     3
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
-
-    def p_suite_extend_assignment(self, p):
-        "suite : assignment suite"
-        #                 1     2
-        self.require_separator(p[1], p[2].statements[0])
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
-
-    def p_suite_extend_assignment_semi(self, p):
-        "suite : assignment SEMICOLON suite"
-        #                 1         2     3
-        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
+        p[0] = adl.syntaxtree.Suite(p[1])
 
     ###################################################### source and notsource
 
@@ -800,7 +675,7 @@ class ADLParser(object):
 
     def p_error(self, p):
         if p is None:
-            raise adl.error.ADLError("an ADL source file/string must be an expression or a set of region/vary blocks (either may be preceded by assignments)")
+            raise adl.error.ADLError("an ADL source file/string must consist of assignments, count/sum/profile/fraction collectors, or source/vary/region/regions blocks")
         else:
             raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 

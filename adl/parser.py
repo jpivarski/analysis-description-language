@@ -54,19 +54,27 @@ class ADLParser(object):
         #              1      2          3         4     5          6
         p[0] = adl.syntaxtree.Source(p[3], p[5], inclusive=False, **self.pos(p, 2))
 
-    ###################################################### split
-
-    def p_split(self, p):
-        "split : SPLIT string BY axis OPENCURLY block CLOSECURLY"
-        #            1      2  3    4         5     6          7
-        p[0] = adl.syntaxtree.Split(p[2], p[4], p[6], **self.pos(p, 1))
-
     ###################################################### region
 
     def p_region(self, p):
+        "region : REGION string OPENCURLY block CLOSECURLY"
+        #              1      2         3     4          5
+        p[0] = adl.syntaxtree.Region(p[2], None, [], p[5], **self.pos(p, 1))
+
+    def p_region_predicate(self, p):
         "region : REGION string expression OPENCURLY block CLOSECURLY"
         #              1      2          3         4     5          6
-        p[0] = adl.syntaxtree.Region(p[2], p[3], p[5], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Region(p[2], p[3], [], p[5], **self.pos(p, 1))
+
+    def p_region_axis(self, p):
+        "region : REGION string BY axis OPENCURLY block CLOSECURLY"
+        #              1      2  3    4         5     6          7
+        p[0] = adl.syntaxtree.Region(p[2], None, p[4], p[6], **self.pos(p, 1))
+
+    def p_region_predicate_axis(self, p):
+        "region : REGION string expression BY axis OPENCURLY block CLOSECURLY"
+        #              1      2          3  4    5         6     7          8
+        p[0] = adl.syntaxtree.Region(p[2], p[3], p[5], p[7], **self.pos(p, 1))
 
     ###################################################### vary
 
@@ -123,16 +131,6 @@ class ADLParser(object):
     def p_block_extend_notsource(self, p):
         "block : notsource block"
         #                1     2
-        p[0] = [p[1]] + p[2]
-
-    def p_block_split(self, p):
-        "block : split"
-        #            1
-        p[0] = [p[1]]
-
-    def p_block_extend_split(self, p):
-        "block : split block"
-        #            1     2
         p[0] = [p[1]] + p[2]
 
     def p_block_region(self, p):
@@ -680,7 +678,7 @@ class ADLParser(object):
 
     def p_error(self, p):
         if p is None:
-            raise adl.error.ADLError("an ADL file/string must consist of assignments, count/sum/profile/fraction collectors, or source/vary/region/split blocks")
+            raise adl.error.ADLError("an ADL file/string must consist of assignments, count/sum/profile/fraction collectors, or source/vary/region blocks")
         else:
             raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 
@@ -691,7 +689,7 @@ def parse(code):
     parser = ADLParser()
     lexer = adl.tokenizer.ADLLexer()
 
-    parser.build(write_tables=False)  # write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
+    parser.build(write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
     lexer.build()
 
     return parser.parser.parse(code, lexer=lexer.lexer, tracking=True)

@@ -38,9 +38,6 @@ def handle(statement, symboltable, source, aggregation):
     elif isinstance(statement, Region):
         raise NotImplementedError
 
-    elif isinstance(statement, Regions):
-        raise NotImplementedError
-
     elif isinstance(statement, Source):
         raise NotImplementedError
 
@@ -56,9 +53,6 @@ def initialize(node, aggregation):
         raise NotImplementedError
 
     elif isinstance(node, Region):
-        raise NotImplementedError
-
-    elif isinstance(node, Regions):
         raise NotImplementedError
 
     elif isinstance(node, Vary):

@@ -393,49 +393,18 @@ class Vary(Statement):
             yield self
 
 class Region(Statement):
-    def __init__(self, name, predicate, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+    def __init__(self, name, predicate, axes, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Region, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
         self.predicate = predicate
-        self.block = block
-
-    def __repr__(self):
-        return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.predicate), repr(self.block))
-
-    def children(self):
-        return [self.name, self.predicate] + self.block
-
-    def leftmost(self):
-        return self.name.leftmost()
-
-    def rightmost(self):
-        return self.block[-1].rightmost()
-
-    def walk(self, topdown=True):
-        if topdown:
-            yield self
-        for x in self.name.walk(topdown=topdown):
-            yield x
-        for x in self.predicate.walk(topdown=topdown):
-            yield x
-        for x in self.block:
-            for y in x.walk(topdown=topdown):
-                yield y
-        if not topdown:
-            yield self
-
-class Split(Statement):
-    def __init__(self, name, axes, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Split, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-        self.name = name
         self.axes = axes
         self.block = block
 
     def __repr__(self):
-        return "{0}({1}, {2}, {3})".format(type(self).__name__, repr(self.name), repr(self.axes), repr(self.block))
+        return "{0}({1}, {2}, {3}, {4})".format(type(self).__name__, repr(self.name), repr(self.predicate), repr(self.axes), repr(self.block))
 
     def children(self):
-        return [self.name] + self.axes + self.block
+        return [self.name, self.predicate] + self.axes + self.block
 
     def leftmost(self):
         return self.name.leftmost()
@@ -448,6 +417,9 @@ class Split(Statement):
             yield self
         for x in self.name.walk(topdown=topdown):
             yield x
+        if self.predicate is not None:
+            for x in self.predicate.walk(topdown=topdown):
+                yield x
         for x in self.axes:
             for y in x.walk(topdown=topdown):
                 yield y

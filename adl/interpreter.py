@@ -56,16 +56,7 @@ def handle(statement, symbols, source, aggregation):
     elif isinstance(statement, FunctionDefine):
         raise NotImplementedError
 
-    elif isinstance(statement, Count):
-        raise NotImplementedError
-
-    elif isinstance(statement, Sum):
-        raise NotImplementedError
-
-    elif isinstance(statement, Profile):
-        raise NotImplementedError
-
-    elif isinstance(statement, Fraction):
+    elif isinstance(statement, Collect):
         raise NotImplementedError
 
     elif isinstance(statement, Vary):
@@ -256,9 +247,9 @@ def aggregation(node, namespace):
     elif isinstance(node, Vary):
         raise NotImplementedError
 
-    elif isinstance(node, Count):
+    elif isinstance(node, Collect):
         adl.util.check_name(node, namespace)
-        if len(node.axes) == 0:
+        if isinstance(node.statistic, Count) and len(node.axes) == 0:
             namespace[node.name.value] = Counter()
         else:
             raise NotImplementedError

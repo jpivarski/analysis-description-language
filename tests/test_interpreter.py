@@ -73,3 +73,26 @@ class Test(unittest.TestCase):
         run = adl.interpreter.Run("sum 'stuff' x")
         run(x=[1, 2, 3])
         assert float(run["stuff"]) == 6
+
+    def test_count_weight(self):
+        run = adl.interpreter.Run("sum 'stuff' x weight y")
+        run(x=[1, 2, 3], y=[2, 2, 2])
+        assert float(run["stuff"]) == 12
+
+    def test_count_regular(self):
+        run = adl.interpreter.Run("sum 'stuff' y by regular(2, 0.0, 4.0) <- x")
+        run(x=[1, 2, 3], y=[2, 2, 2])
+        assert float(run["stuff"][0]) == 2
+        assert float(run["stuff"][1]) == 4
+        assert float(run["stuff"].underflow) == 0
+        assert float(run["stuff"].overflow) == 0
+        assert float(run["stuff"].nanflow) == 0
+
+    def test_count_regular_weight(self):
+        run = adl.interpreter.Run("sum 'stuff' z by regular(2, 0.0, 4.0) <- x weight y")
+        run(x=[1, 2, 3], y=[2, 2, 2], z=[3, 3, 3])
+        assert float(run["stuff"][0]) == 6
+        assert float(run["stuff"][1]) == 12
+        assert float(run["stuff"].underflow) == 0
+        assert float(run["stuff"].overflow) == 0
+        assert float(run["stuff"].nanflow) == 0

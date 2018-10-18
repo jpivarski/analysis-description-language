@@ -14,7 +14,7 @@ class ADLParser(object):
             lolineno -= 1
         while p.lexer.linepos[hilineno - 1] > hi:
             hilineno -= 1
-        return {"source": p.lexer.lexdata,
+        return {"code": p.lexer.lexdata,
                 "lexspan": p.lexspan(n),
                 "lineno": lolineno,
                 "col_offset": lo - p.lexer.linepos[lolineno - 1],
@@ -24,7 +24,7 @@ class ADLParser(object):
     def span(self, p1, p2):
         p1 = p1.leftmost()
         p2 = p2.rightmost()
-        return {"source": p1.source,
+        return {"code": p1.code,
                 "lexspan": (p1.lexspan[0], p2.lexspan[1]),
                 "lineno": p1.lineno,
                 "col_offset": p1.col_offset,
@@ -32,8 +32,8 @@ class ADLParser(object):
                 "col_offset2": p2.col_offset}
 
     def require_separator(self, left, right):
-        if "\n" not in left.source[left.rightmost().lexspan[1]:right.leftmost().lexspan[0]]:
-            raise adl.error.ADLSyntaxError("missing semicolon or newline", left.source, right.leftmost().lineno, right.leftmost().col_offset)
+        if "\n" not in left.code[left.rightmost().lexspan[1]:right.leftmost().lexspan[0]]:
+            raise adl.error.ADLSyntaxError("missing semicolon or newline", left.code, right.leftmost().lineno, right.leftmost().col_offset)
 
     ###################################################### suite (top-level entry point)
 
@@ -675,18 +675,18 @@ class ADLParser(object):
 
     def p_error(self, p):
         if p is None:
-            raise adl.error.ADLError("an ADL source file/string must consist of assignments, count/sum/profile/fraction collectors, or source/vary/region/regions blocks")
+            raise adl.error.ADLError("an ADL file/string must consist of assignments, count/sum/profile/fraction collectors, or source/vary/region/regions blocks")
         else:
             raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 
     def build(self, **kwargs):
         self.parser = ply.yacc.yacc(module=self, **kwargs)
 
-def parse(source):
+def parse(code):
     parser = ADLParser()
     lexer = adl.tokenizer.ADLLexer()
 
     parser.build(write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
     lexer.build()
 
-    return parser.parser.parse(source, lexer=lexer.lexer, tracking=True)
+    return parser.parser.parse(code, lexer=lexer.lexer, tracking=True)

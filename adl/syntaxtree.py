@@ -1,6 +1,6 @@
 class AST(object):
-    def __init__(self, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        self.source = source
+    def __init__(self, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        self.code = code
         self.lexspan = lexspan
         self.lineno = lineno
         self.col_offset = col_offset
@@ -20,8 +20,8 @@ class AST(object):
         yield self
 
 class LeftRight(AST):
-    def __init__(self, left, right, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(LeftRight, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, left, right, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(LeftRight, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.left = left
         self.right = right
 
@@ -48,8 +48,8 @@ class LeftRight(AST):
             yield self
 
 class Right(AST):
-    def __init__(self, right, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Right, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, right, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Right, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.right = right
 
     def __repr__(self):
@@ -100,16 +100,16 @@ class Expression(AST): pass
 class Statement(AST): pass
 
 class Literal(Expression):
-    def __init__(self, value, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Literal, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, value, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Literal, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.value = value
 
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.value))
 
 # class LiteralList(Expression):
-#     def __init__(self, value, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-#         super(Literal, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+#     def __init__(self, value, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+#         super(Literal, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
 #         self.value = value
 
 #     def __repr__(self):
@@ -128,16 +128,16 @@ class Literal(Expression):
 #         return list(self.value)
 
 class Identifier(Expression):
-    def __init__(self, name, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Identifier, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, name, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Identifier, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
 
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.name))
 
 class Call(Expression):
-    def __init__(self, function, arguments, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Call, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, function, arguments, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Call, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.function = function
         self.arguments = arguments
 
@@ -168,8 +168,8 @@ class Call(Expression):
             yield self
 
 class Inline(AST):
-    def __init__(self, parameters, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Inline, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, parameters, expression, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Inline, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.parameters = parameters
         self.expression = expression
 
@@ -197,8 +197,8 @@ class Inline(AST):
             yield self
 
 class Define(Statement):
-    def __init__(self, target, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Define, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, target, expression, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Define, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.target = target
         self.expression = expression
 
@@ -225,8 +225,8 @@ class Define(Statement):
             yield self
 
 class FunctionDefine(Statement):
-    def __init__(self, target, body, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(FunctionDefine, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, target, body, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(FunctionDefine, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.target = target
         self.body = body
 
@@ -254,8 +254,8 @@ class FunctionDefine(Statement):
             yield self
 
 class Axis(AST):
-    def __init__(self, binning, expression, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Axis, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, binning, expression, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Axis, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.binning = binning
         self.expression = expression
 
@@ -287,8 +287,8 @@ class Profile(Special): pass
 class Fraction(Special): pass
 
 class Collect(Statement):
-    def __init__(self, statistic, name, expression, axes, weight, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Collect, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, statistic, name, expression, axes, weight, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Collect, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.statistic = statistic
         self.name = name
         self.expression = expression
@@ -334,8 +334,8 @@ class Collect(Statement):
             yield self
 
 class Variation(AST):
-    def __init__(self, name, assignments, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Variation, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, name, assignments, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Variation, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
         self.assignments = assignments
 
@@ -363,8 +363,8 @@ class Variation(AST):
             yield self
 
 class Vary(Statement):
-    def __init__(self, variations, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Vary, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, variations, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Vary, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.variations = variations
         self.block = block
 
@@ -393,8 +393,8 @@ class Vary(Statement):
             yield self
 
 class Region(Statement):
-    def __init__(self, name, predicate, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Region, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, name, predicate, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Region, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
         self.predicate = predicate
         self.block = block
@@ -425,8 +425,8 @@ class Region(Statement):
             yield self
 
 class Regions(Statement):
-    def __init__(self, name, axes, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Regions, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, name, axes, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Regions, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
         self.axes = axes
         self.block = block
@@ -458,8 +458,8 @@ class Regions(Statement):
             yield self
 
 class Source(Statement):
-    def __init__(self, names, block, inclusive, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Source, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, names, block, inclusive, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Source, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.names = names
         self.block = block
         self.inclusive = inclusive
@@ -489,8 +489,8 @@ class Source(Statement):
             yield self
 
 class Suite(AST):
-    def __init__(self, statements, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Suite, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+    def __init__(self, statements, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Suite, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.statements = statements
 
     def __repr__(self):

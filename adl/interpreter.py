@@ -29,7 +29,8 @@ def handle(statement, symbols, source, aggregation):
         raise NotImplementedError
 
     elif isinstance(statement, Collect):
-        raise NotImplementedError
+        weight = 1
+        namespace[statement.name.value].fill(weight)
 
     elif isinstance(statement, Vary):
         raise NotImplementedError
@@ -272,11 +273,11 @@ class Namespace(object):
 class Run(object):
     builtins = {}
 
-    def __init__(self, source):
-        if isinstance(source, str):
-            self.ast = adl.parser.parse(source)
+    def __init__(self, code):
+        if isinstance(code, str):
+            self.ast = adl.parser.parse(code)
         else:
-            self.ast = adl.parser.parse(source.read())
+            self.ast = adl.parser.parse(code.read())
         self.clear()
 
     def clear(self):
@@ -285,7 +286,7 @@ class Run(object):
 
     def __iter__(self, source=None, **data):
         if not isinstance(self.ast.statements[-1], Expression):
-            raise adl.error.ADLTypeError("this ADL source file/string ends with a {0}, not an expression; cannot iterate".format(type(self.ast).__name__))
+            raise adl.error.ADLTypeError("this ADL file/string ends with a {0}, not an expression; cannot iterate".format(type(self.ast).__name__))
         for i in range(min(len(x) for x in data.values())):
             yield self(source=source, **{n: x[i] for n, x in data.items()})
 

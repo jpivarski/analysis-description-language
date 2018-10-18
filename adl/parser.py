@@ -542,7 +542,7 @@ class ADLParser(object):
     def p_term_factor_mod(self, p):
         "term : factor MOD factor"
         #            1   2      3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Mod(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p2, ))
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Mod(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     ###################################################### expression precedence: unary + and -
 
@@ -583,7 +583,7 @@ class ADLParser(object):
     def p_trailer_attribute(self, p):
         "trailer : trailer DOT IDENTIFIER"
         #                1   2          3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Identifier(p[3])], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Literal(p[3])], **self.pos(p, 2))
 
     def p_trailer_subscript(self, p):
         "trailer : trailer OPENBRACKET arglist CLOSEBRACKET"
@@ -608,8 +608,8 @@ class ADLParser(object):
     ###################################################### expression precedence: atoms
 
     def p_atom_parens(self, p):
-        "atom : OPENPAREN atom CLOSEPAREN"
-        #               1    2          3
+        "atom : OPENPAREN expression CLOSEPAREN"
+        #               1          2          3
         p[0] = p[2]
 
     def p_atom_literal_string(self, p):

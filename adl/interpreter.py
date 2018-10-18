@@ -2,6 +2,7 @@
 
 import fnmatch
 import math
+import numbers
 
 import numpy
 
@@ -570,11 +571,11 @@ def typerequire(*types):
         if len(expression.arguments) != len(types):
             raise adl.error.ADLTypeError("expected {0} arguments, found {1}".format(len(types), len(expression.arguments)))
         for val, arg, tpe in zip(values, expression.arguments, types):
-            if tpe is bool and value is not True and value is not False:
+            if tpe is bool and val is not True and val is not False:
                 raise adl.error.ADLTypeError("value is not a boolean: {0}".format(repr(val), arg))
-            elif tpe is float and not isinstance(x, (numbers.Real, numpy.integer, numpy.floating)):
+            elif tpe is float and not isinstance(val, (numbers.Real, numpy.integer, numpy.floating)):
                 raise adl.error.ADLTypeError("value is not a number: {0}".format(repr(val), arg))
-            elif tpe is int and not isinstance(x, (numbers.Integral, numpy.integer)):
+            elif tpe is int and not isinstance(val, (numbers.Integral, numpy.integer)):
                 raise adl.error.ADLTypeError("value is not an integer: {0}".format(repr(val), arg))
         return True
     return out

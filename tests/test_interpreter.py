@@ -200,3 +200,86 @@ class Test(unittest.TestCase):
         assert float(run["one", "stuff", 1]) == 0
         assert float(run["two", "stuff", 0]) == 0
         assert float(run["two", "stuff", 1]) == 3
+
+    def test_expression_literal(self):
+        run = adl.interpreter.Run("y := 5")
+        assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [5, 5, 5]}
+
+    def test_expression_attribute(self):
+        run = adl.interpreter.Run("y := x.one")
+        assert run(x=[{"one": 1}, {"one": 2}, {"one": 3}]) == {"x": [{"one": 1}, {"one": 2}, {"one": 3}], "y": [1, 2, 3]}
+
+    def test_expression_subscript(self):
+        run = adl.interpreter.Run("y := x['one']")
+        assert run(x=[{"one": 1}, {"one": 2}, {"one": 3}]) == {"x": [{"one": 1}, {"one": 2}, {"one": 3}], "y": [1, 2, 3]}
+
+        run = adl.interpreter.Run("y := x[0]")
+        assert run(x=[[1], [2], [3]]) == {"x": [[1], [2], [3]], "y": [1, 2, 3]}
+
+    def test_expression_or(self):
+        run = adl.interpreter.Run("z := x or y")
+        assert run(x=[True, True, False, False], y=[True, False, True, False]) == {"x": [True, True, False, False], "y": [True, False, True, False], "z": [True, True, True, False]}
+
+    def test_expression_and(self):
+        run = adl.interpreter.Run("z := x and y")
+        assert run(x=[True, True, False, False], y=[True, False, True, False]) == {"x": [True, True, False, False], "y": [True, False, True, False], "z": [True, False, False, False]}
+
+    def test_expression_not(self):
+        run = adl.interpreter.Run("y := not x")
+        assert run(x=[True, True, False, False]) == {"x": [True, True, False, False], "y": [False, False, True, True]}
+
+    def test_expression_eq(self):
+        run = adl.interpreter.Run("z := (x == y)")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [False, True, False]}
+
+    def test_expression_ne(self):
+        run = adl.interpreter.Run("z := (x != y)")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [True, False, True]}
+
+    def test_expression_lt(self):
+        run = adl.interpreter.Run("z := x < y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [True, False, False]}
+
+    def test_expression_le(self):
+        run = adl.interpreter.Run("z := x <= y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [True, True, False]}
+
+    def test_expression_gt(self):
+        run = adl.interpreter.Run("z := x > y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [False, False, True]}
+
+    def test_expression_ge(self):
+        run = adl.interpreter.Run("z := x >= y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [False, True, True]}
+
+    def test_expression_plus(self):
+        run = adl.interpreter.Run("z := x + y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [3, 4, 5]}
+
+    def test_expression_minus(self):
+        run = adl.interpreter.Run("z := x - y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [-1, 0, 1]}
+
+    def test_expression_times(self):
+        run = adl.interpreter.Run("z := x * y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [2, 4, 6]}
+
+    def test_expression_div(self):
+        run = adl.interpreter.Run("z := x / y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [0.5, 1.0, 1.5]}
+
+    def test_expression_mod(self):
+        run = adl.interpreter.Run("z := x % y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [1, 0, 1]}
+
+    def test_expression_uplus(self):
+        run = adl.interpreter.Run("y := +x")
+        assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [1, 2, 3]}
+
+    def test_expression_uminus(self):
+        run = adl.interpreter.Run("y := -x")
+        assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [-1, -2, -3]}
+
+    def test_expression_power(self):
+        run = adl.interpreter.Run("z := x**y")
+        assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [1, 4, 9]}

@@ -82,7 +82,7 @@ class Special(AST):
         return hash(self.__class__)
 
     def __eq__(self, other):
-        return self.__class__ is other.__class__
+        return self.__class__ is other.__class__ or self.__class__ is other
 
     def __ne__(self, other):
         return not self.__eq__(other)

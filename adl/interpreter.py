@@ -175,7 +175,7 @@ class Binning(object):
             for x in call.arguments:
                 if not adl.util.isnum(x.value):
                     raise adl.error.ADLTypeError("edges must be literal numbers", x)
-            return VariableBinning([x.value for x in call.arguments], storage)
+            return VariableBinning(expression, [x.value for x in call.arguments], storage)
 
         else:
             raise ADLTypeError("not a binning", call)
@@ -192,7 +192,7 @@ class RegularBinning(Binning):
         self.nanflow = storage.zeros_like()
 
     def zeros_like(self):
-        return RegularBinning(self.expression, self.numbins, self.low, self.high, self.storage)
+        return RegularBinning(self.expression, self.numbins, self.low, self.high, self.nanflow)
 
     @property
     def edges(self):
@@ -233,13 +233,13 @@ class VariableBinning(Binning):
     def __init__(self, expression, edges, storage):
         self.expression = expression
         self.edges = [float(x) for x in edges]
-        self.values = [storage.copy() for x in range(self.numbins)]
-        self.underflow = storage.copy()
-        self.overflow = storage.copy()
-        self.nanflow = storage.copy()
+        self.values = [storage.zeros_like() for x in range(self.numbins)]
+        self.underflow = storage.zeros_like()
+        self.overflow = storage.zeros_like()
+        self.nanflow = storage.zeros_like()
 
     def zeros_like(self):
-        return VariableBinning(self.expression, self.edges, self.storage)
+        return VariableBinning(self.expression, self.edges, self.nanflow)
 
     @property
     def numbins(self):
@@ -273,7 +273,7 @@ class VariableBinning(Binning):
         elif adl.util.isnan(x):
             self.nanflow.fill(symboltable, weight)
         else:
-            for i in self.numbins:
+            for i in range(self.numbins):
                 if self.edges[i] <= x < self.edges[i + 1]:
                     self.values[i].fill(symboltable, weight)
                     break

@@ -35,21 +35,7 @@ def handle(statement, symboltable, source, aggregation):
             weight = 1
         else:
             weight = calculate(statement.weight, symboltable)
-
-        if isinstance(statement.statistic, Count):
-            aggregation[statement.name.value].fill(symboltable, weight)
-
-        elif isinstance(statement.statistic, Sum):
-            raise NotImplementedError
-
-        elif isinstance(statement.statistic, Profile):
-            raise NotImplementedError
-
-        elif isinstance(statement.statistic, Fraction):
-            raise NotImplementedError
-
-        else:
-            raise adl.error.ADLInternalError("{0} is not a collectable statistic".format(type(statement).__name__), statement.statistic)
+        aggregation[statement.name.value].fill(symboltable, weight)
         
     elif isinstance(statement, Vary):
         raise NotImplementedError
@@ -63,10 +49,10 @@ def handle(statement, symboltable, source, aggregation):
     else:
         raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
 
-def initialize(statement, aggregation):
+def initialize(statement, name, aggregation):
     if isinstance(statement, Suite):
         for x in statement.statements:
-            initialize(x, aggregation)
+            initialize(x, name, aggregation)
 
     elif isinstance(statement, Source):
         raise NotImplementedError
@@ -79,23 +65,21 @@ def initialize(statement, aggregation):
 
     elif isinstance(statement, Collect):
         adl.util.check_name(statement, aggregation)
+        name = name + (statement.name.value,)
 
-        if isinstance(statement.statistic, Count):
-            storage = Counter()
-            for axis in statement.axes[::-1]:
-                storage = Binning.binning(axis.binning, axis.expression, storage)
-
-        elif isinstance(statement.statistic, Sum):
+        if isinstance(statement.statistic, CountStatistic):
+            storage = Count(name)
+        elif isinstance(statement.statistic, SumStatistic):
+            storage = Sum(name, statement.expression)
+        elif isinstance(statement.statistic, ProfileStatistic):
             raise NotImplementedError
-
-        elif isinstance(statement.statistic, Profile):
+        elif isinstance(statement.statistic, FractionStatistic):
             raise NotImplementedError
-
-        elif isinstance(statement.statistic, Fraction):
-            raise NotImplementedError
-
         else:
-            raise adl.error.ADLInternalError("{0} is not a collectable statistic".format(type(statement).__name__), statement.statistic)
+            raise adl.error.ADLInternalError("{0} is not a collectable statistic".format(type(statement.statistic).__name__), statement.statistic)
+
+        for axis in statement.axes[::-1]:
+            storage = Binning.binning(name, axis.binning, axis.expression, storage)
 
         aggregation[statement.name.value] = storage
 
@@ -131,24 +115,30 @@ class SymbolTable(object):
     def __contains__(self, where):
         return where.name in self.symbols
 
-class Storage(object): pass
-
-class Counter(Storage):
-    def __init__(self):
-        self.sumw = 0
-        self.sumw2 = 0
-
-    def zeros_like(self):
-        return Counter()
-
-    def __repr__(self):
-        return "{0} +- {1}".format(self.sumw, math.sqrt(self.sumw2))
-
+class Storage(object):
     def __getitem__(self, where):
         if where == ():
             return self
         else:
             raise IndexError("too many dimensions in index")
+
+    def calculate(self, symboltable):
+        x = calculate(self.expression, symboltable)
+        if not adl.util.isnum(x):
+            raise adl.error.ADLTypeError("expression returned a non-number: {0}".format(x), self.expression)
+        return x
+
+class Count(Storage):
+    def __init__(self, name):
+        self.name = name
+        self.sumw = 0
+        self.sumw2 = 0
+
+    def zeros_like(self, name):
+        return Count(name)
+
+    def __repr__(self):
+        return "<Count {0}: {1} +- {2}>".format(", ".join(repr(x) for x in self.name), self.sumw, math.sqrt(self.sumw2))
 
     def fill(self, symboltable, weight):
         self.sumw += weight
@@ -157,9 +147,27 @@ class Counter(Storage):
     def __float__(self):
         return float(self.sumw)
 
+class Sum(Storage):
+    def __init__(self, name, expression):
+        self.name = name
+        self.expression = expression
+        self.sum = 0.0
+
+    def zeros_like(self, name):
+        return Sum(name, self.expression)
+
+    def __repr__(self):
+        return "<Sum {0}: {1}>".format(", ".join(repr(x) for x in self.name), self.sum)
+
+    def fill(self, symboltable, weight):
+        self.sum += weight * self.calculate(symboltable)
+
+    def __float__(self):
+        return float(self.sum)
+
 class Binning(object):
     @staticmethod
-    def binning(call, expression, storage):
+    def binning(name, call, expression, storage):
         if isinstance(call, Call) and call.function.name == "regular":
             adl.util.check_args(call, 3, 3)
             if not isinstance(call.arguments[0], Literal) and adl.util.isint(call.arguments[0].value, 1):
@@ -168,31 +176,35 @@ class Binning(object):
                 raise adl.error.ADLTypeError("low must be a literal number", call.arguments[1])
             if not isinstance(call.arguments[2], Literal) and adl.util.isnum(call.arguments[2].value):
                 raise adl.error.ADLTypeError("high must be a literal number", call.arguments[2])
-            return RegularBinning(expression, call.arguments[0].value, call.arguments[1].value, call.arguments[2].value, storage)
+            return RegularBinning(name, expression, call.arguments[0].value, call.arguments[1].value, call.arguments[2].value, storage)
 
         elif isinstance(call, Call) and call.function.name == "variable":
             adl.util.check_args(call, 1, None)
             for x in call.arguments:
                 if not adl.util.isnum(x.value):
                     raise adl.error.ADLTypeError("edges must be literal numbers", x)
-            return VariableBinning(expression, [x.value for x in call.arguments], storage)
+            return VariableBinning(name, expression, [x.value for x in call.arguments], storage)
 
         else:
             raise ADLTypeError("not a binning", call)
 
+    def __repr__(self):
+        return "<{0} {1} at {2:012x}>".format(type(self).__name__, ", ".join(repr(x) for x in self.name), id(self))
+
 class RegularBinning(Binning):
-    def __init__(self, expression, numbins, low, high, storage):
+    def __init__(self, name, expression, numbins, low, high, storage):
+        self.name = name
         self.expression = expression
         self.numbins = int(numbins)
         self.low = float(low)
         self.high = float(high)
-        self.values = [storage.zeros_like() for x in range(self.numbins)]
-        self.underflow = storage.zeros_like()
-        self.overflow = storage.zeros_like()
-        self.nanflow = storage.zeros_like()
+        self.values = [storage.zeros_like(self.name + (i,)) for i, x in enumerate(range(self.numbins))]
+        self.underflow = storage.zeros_like(self.name + ("underflow",))
+        self.overflow = storage.zeros_like(self.name + ("overflow",))
+        self.nanflow = storage.zeros_like(self.name + ("nanflow",))
 
-    def zeros_like(self):
-        return RegularBinning(self.expression, self.numbins, self.low, self.high, self.nanflow)
+    def zeros_like(self, name):
+        return RegularBinning(name, self.expression, self.numbins, self.low, self.high, self.nanflow)
 
     @property
     def edges(self):
@@ -211,8 +223,16 @@ class RegularBinning(Binning):
             return self.underflow[tail]
         elif head == adl.util.inf or adl.util.isint(head, self.numbins, None):
             return self.overflow[tail]
-        else:
+        elif adl.util.isnan(head):
             return self.nanflow[tail]
+        elif head == "underflow":
+            return self.underflow[tail]
+        elif head == "overflow":
+            return self.overflow[tail]
+        elif head == "nanflow":
+            return self.nanflow[tail]
+        else:
+            raise IndexError("improper index for {0}: {1}".format(type(self).__name__, repr(head)))
 
     def fill(self, symboltable, weight):
         x = calculate(self.expression, symboltable)
@@ -230,16 +250,17 @@ class RegularBinning(Binning):
             self.values[int(math.trunc(index))].fill(symboltable, weight)
 
 class VariableBinning(Binning):
-    def __init__(self, expression, edges, storage):
+    def __init__(self, name, expression, edges, storage):
+        self.name = name
         self.expression = expression
         self.edges = [float(x) for x in edges]
-        self.values = [storage.zeros_like() for x in range(self.numbins)]
-        self.underflow = storage.zeros_like()
-        self.overflow = storage.zeros_like()
-        self.nanflow = storage.zeros_like()
+        self.values = [storage.zeros_like(self.name + (i,)) for i, x in enumerate(range(self.numbins))]
+        self.underflow = storage.zeros_like(self.name + ("underflow",))
+        self.overflow = storage.zeros_like(self.name + ("overflow",))
+        self.nanflow = storage.zeros_like(self.name + ("nanflow",))
 
-    def zeros_like(self):
-        return VariableBinning(self.expression, self.edges, self.nanflow)
+    def zeros_like(self, name):
+        return VariableBinning(name, self.expression, self.edges, self.nanflow)
 
     @property
     def numbins(self):
@@ -258,8 +279,16 @@ class VariableBinning(Binning):
             return self.underflow[tail]
         elif head == adl.util.inf or adl.util.isint(head, self.numbins, None):
             return self.overflow[tail]
-        else:
+        elif adl.util.isnan(head):
             return self.nanflow[tail]
+        elif head == "underflow":
+            return self.underflow[tail]
+        elif head == "overflow":
+            return self.overflow[tail]
+        elif head == "nanflow":
+            return self.nanflow[tail]
+        else:
+            raise IndexError("improper index for {0}: {1}".format(type(self).__name__, repr(head)))
 
     def fill(self, symboltable, weight=1):
         x = calculate(self.expression, symboltable)
@@ -308,7 +337,7 @@ class Run(object):
 
     def clear(self):
         self.aggregation = Namespace()
-        initialize(self.ast, self.aggregation)
+        initialize(self.ast, (), self.aggregation)
 
     def __iter__(self, source=None, **data):
         if not isinstance(self.ast.statements[-1], Expression):

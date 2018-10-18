@@ -173,12 +173,12 @@ class ADLParser(object):
 
     def p_block_sum(self, p):
         "block : sum"
-        #              1
+        #          1
         p[0] = [p[1]]
 
     def p_block_extend_sum(self, p):
         "block : sum block"
-        #              1     2
+        #          1     2
         self.require_separator(p[1], p[2][0])
         p[0] = [p[1]] + p[2]
 
@@ -258,92 +258,92 @@ class ADLParser(object):
     def p_count(self, p):
         "count : COUNT string"
         #            1      2
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Count(**self.pos(p, 1)), p[2], None, [], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.CountStatistic(**self.pos(p, 1)), p[2], None, [], None, **self.pos(p, 1))
 
     def p_count_weight(self, p):
         "count : COUNT string WEIGHT expression"
         #            1      2      3          4
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Count(**self.pos(p, 1)), p[2], None, [], p[4], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.CountStatistic(**self.pos(p, 1)), p[2], None, [], p[4], **self.pos(p, 1))
 
     def p_count_axis(self, p):
         "count : COUNT string BY axis"
         #            1      2  3    4
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Count(**self.pos(p, 1)), p[2], None, p[4], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.CountStatistic(**self.pos(p, 1)), p[2], None, p[4], None, **self.pos(p, 1))
 
     def p_count_axisweight(self, p):
         "count : COUNT string BY axisweight"
         #            1      2  3          4
         axis, weight = p[4]
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Count(**self.pos(p, 1)), p[2], None, axis, weight, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.CountStatistic(**self.pos(p, 1)), p[2], None, axis, weight, **self.pos(p, 1))
 
     ###################################################### sum
 
     def p_sum(self, p):
         "sum : SUM string expression"
         #        1      2          3
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Sum(**self.pos(p, 1)), p[2], p[3], [], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.SumStatistic(**self.pos(p, 1)), p[2], p[3], [], None, **self.pos(p, 1))
 
     def p_sum_weight(self, p):
         "sum : SUM string expression WEIGHT expression"
         #        1      2          3      4          5
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Sum(**self.pos(p, 1)), p[2], p[3], [], p[5], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.SumStatistic(**self.pos(p, 1)), p[2], p[3], [], p[5], **self.pos(p, 1))
 
     def p_sum_axis(self, p):
         "sum : SUM string expression BY axis"
         #        1      2          3  4    5
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Sum(**self.pos(p, 1)), p[2], p[3], p[5], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.SumStatistic(**self.pos(p, 1)), p[2], p[3], p[5], None, **self.pos(p, 1))
 
     def p_sum_axisweight(self, p):
         "sum : SUM string expression BY axisweight"
         #        1      2          3  4          5
         axis, weight = p[5]
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Sum(**self.pos(p, 1)), p[2], p[3], axis, weight, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.SumStatistic(**self.pos(p, 1)), p[2], p[3], axis, weight, **self.pos(p, 1))
 
     ###################################################### profile
 
     def p_profile(self, p):
         "profile : PROFILE string expression"
         #                1      2          3
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Profile(**self.pos(p, 1)), p[2], p[3], [], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.ProfileStatistic(**self.pos(p, 1)), p[2], p[3], [], None, **self.pos(p, 1))
 
     def p_profile_weight(self, p):
         "profile : PROFILE string expression WEIGHT expression"
         #                1      2          3      4          5
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Profile(**self.pos(p, 1)), p[2], p[3], [], p[5], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.ProfileStatistic(**self.pos(p, 1)), p[2], p[3], [], p[5], **self.pos(p, 1))
 
     def p_profile_axis(self, p):
         "profile : PROFILE string expression BY axis"
         #                1      2          3  4    5
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Profile(**self.pos(p, 1)), p[2], p[3], p[5], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.ProfileStatistic(**self.pos(p, 1)), p[2], p[3], p[5], None, **self.pos(p, 1))
 
     def p_profile_axisweight(self, p):
         "profile : PROFILE string expression BY axisweight"
         #                1      2          3  4          5
         axis, weight = p[5]
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Profile(**self.pos(p, 1)), p[2], p[3], axis, weight, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.ProfileStatistic(**self.pos(p, 1)), p[2], p[3], axis, weight, **self.pos(p, 1))
 
     ###################################################### fraction
 
     def p_fraction(self, p):
         "fraction : FRACTION string expression"
         #                  1      2          3
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Fraction(**self.pos(p, 1)), p[2], p[3], [], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.FractionStatistic(**self.pos(p, 1)), p[2], p[3], [], None, **self.pos(p, 1))
 
     def p_fraction_weight(self, p):
         "fraction : FRACTION string expression WEIGHT expression"
         #                  1      2          3      4          5
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Fraction(**self.pos(p, 1)), p[2], p[3], [], p[5], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.FractionStatistic(**self.pos(p, 1)), p[2], p[3], [], p[5], **self.pos(p, 1))
 
     def p_fraction_axis(self, p):
         "fraction : FRACTION string expression BY axis"
         #                  1      2          3  4    5
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Fraction(**self.pos(p, 1)), p[2], p[3], p[5], None, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.FractionStatistic(**self.pos(p, 1)), p[2], p[3], p[5], None, **self.pos(p, 1))
 
     def p_fraction_axisweight(self, p):
         "fraction : FRACTION string expression BY axisweight"
         #                  1      2          3  4          5
         axis, weight = p[5]
-        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.Fraction(**self.pos(p, 1)), p[2], p[3], axis, weight, **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Collect(adl.syntaxtree.FractionStatistic(**self.pos(p, 1)), p[2], p[3], axis, weight, **self.pos(p, 1))
 
     ###################################################### axis and axisweight
 
@@ -680,7 +680,7 @@ class ADLParser(object):
 
     def p_error(self, p):
         if p is None:
-            raise adl.error.ADLError("an ADL file/string must consist of assignments, count/sum/profile/fraction collectors, or source/vary/region blocks")
+            raise adl.error.ADLError("an ADL file/string ended prematurely")
         else:
             raise adl.error.ADLSyntaxError("illegal syntax", p.lexer.lexdata, len(p.lexer.linepos), p.lexpos - p.lexer.linepos[-1])
 

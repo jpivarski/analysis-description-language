@@ -68,3 +68,8 @@ class Test(unittest.TestCase):
         assert float(run["stuff"][0]) == 2
         assert float(run["stuff"][1]) == 2
         assert float(run["stuff"].overflow) == 2
+
+    def test_sum(self):
+        run = adl.interpreter.Run("sum 'stuff' x")
+        run(x=[1, 2, 3])
+        assert float(run["stuff"]) == 6

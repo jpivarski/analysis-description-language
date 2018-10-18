@@ -283,10 +283,10 @@ class Axis(AST):
         if not topdown:
             yield self
 
-class Count(Special): pass
-class Sum(Special): pass
-class Profile(Special): pass
-class Fraction(Special): pass
+class CountStatistic(Special): pass
+class SumStatistic(Special): pass
+class ProfileStatistic(Special): pass
+class FractionStatistic(Special): pass
 
 class Collect(Statement):
     def __init__(self, statistic, name, expression, axes, weight, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):

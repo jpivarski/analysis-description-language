@@ -311,3 +311,16 @@ class Test(unittest.TestCase):
         def f(x):
             raise Exception("hello")
         self.assertRaises(adl.error.ADLRuntimeError, lambda: run(x=[1, 2, 3], f=f))
+
+    def test_functional(self):
+        run = adl.interpreter.Run("y := f(g, x)")
+        f = lambda g, x: g(x)
+        g = lambda x: x**2
+        out = run(x=[1, 2, 3], f=f, g=g)
+        out["y"] == [1, 4, 9]
+
+    def test_functional_inline(self):
+        run = adl.interpreter.Run("y := f(z -> z**2, x)")
+        f = lambda g, x: g(x)
+        out = run(x=[1, 2, 3], f=f)
+        out["y"] == [1, 4, 9]

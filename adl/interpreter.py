@@ -41,6 +41,22 @@ def calculate(expression, symboltable):
                 else:
                     raise adl.error.ADLRuntimeError(str(err), expression)
         
+    elif isinstance(expression, Inline):
+        parameters = [x.name for x in expression.parameters]
+        frozen = symboltable.frozen()
+
+        def function(*values):
+            if len(parameters) != len(values):
+                raise adl.error.ADLTypeError("wrong number of arguments: expecting {0}, encountered {1}".format(len(parameters), len(values)), expression)
+            symbols = SymbolTable(frozen)
+            for param, val in zip(parameters, values):
+                symbols[Identifier(param)] = val
+            for stmt in expression.body[:-1]:
+                handle(stmt, source, symbols, aggregation)
+            return calculate(expression.body[-1], symbols)
+
+        return function
+
     else:
         raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)
 

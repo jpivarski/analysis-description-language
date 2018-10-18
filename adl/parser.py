@@ -384,17 +384,32 @@ class ADLParser(object):
     def p_inline_identifier(self, p):
         "inline : IDENTIFIER RIGHTARROW expression"
         #                  1          2          3
-        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))], p[3], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))], [p[3]], **self.pos(p, 2))
 
     def p_inline_identifier_(self, p):
         "inline : OPENPAREN IDENTIFIER CLOSEPAREN RIGHTARROW expression"
         #                 1          2          3          4          5
-        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[2], **self.pos(p, 2))], p[5], **self.pos(p, 4))
+        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[2], **self.pos(p, 2))], [p[5]], **self.pos(p, 4))
 
     def p_inline_arglist(self, p):
         "inline : OPENPAREN arglist CLOSEPAREN RIGHTARROW expression"
         #                 1       2          3          4          5
-        p[0] = adl.syntaxtree.Inline(p[2], p[5], **self.pos(p, 4))
+        p[0] = adl.syntaxtree.Inline(p[2], [p[5]], **self.pos(p, 4))
+
+    def p_inline_identifier_body(self, p):
+        "inline : IDENTIFIER RIGHTARROW OPENCURLY body CLOSECURLY"
+        #                  1          2         3    4          5
+        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))], p[4], **self.pos(p, 2))
+
+    def p_inline_identifier_body_(self, p):
+        "inline : OPENPAREN IDENTIFIER CLOSEPAREN RIGHTARROW OPENCURLY body CLOSECURLY"
+        #                 1          2          3          4         5    6          7
+        p[0] = adl.syntaxtree.Inline([adl.syntaxtree.Identifier(p[2], **self.pos(p, 2))], p[6], **self.pos(p, 4))
+
+    def p_inline_arglist_body(self, p):
+        "inline : OPENPAREN arglist CLOSEPAREN RIGHTARROW OPENCURLY body CLOSECURLY"
+        #                 1       2          3          4         5    6          7
+        p[0] = adl.syntaxtree.Inline(p[2], p[6], **self.pos(p, 4))
 
     ###################################################### expression precedence: logical or
 

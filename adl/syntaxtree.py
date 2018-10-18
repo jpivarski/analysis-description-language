@@ -181,22 +181,22 @@ class Call(Expression):
             yield self
 
 class Inline(AST):
-    def __init__(self, parameters, expression, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+    def __init__(self, parameters, body, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Inline, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.parameters = parameters
-        self.expression = expression
+        self.body = body
 
     def __repr__(self):
-        return "{0}({1}, {2})".format(type(self).__name__, repr(self.parameters), repr(self.expression))
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.parameters), repr(self.body))
 
     def children(self):
-        return self.parameters + [self.expression]
+        return self.parameters + self.body
 
     def leftmost(self):
         return self.parameters[0].leftmost()
 
     def rightmost(self):
-        return self.expression.rightmost()
+        return self.body[-1].rightmost()
 
     def walk(self, topdown=True):
         if topdown:
@@ -204,8 +204,9 @@ class Inline(AST):
         for x in self.parameters:
             for y in x.walk(topdown=topdown):
                 yield y
-        for x in self.expression.walk(topdown=topdown):
-            yield x
+        for x in self.body:
+            for y in x.walk(topdown=topdown):
+                yield y
         if not topdown:
             yield self
 

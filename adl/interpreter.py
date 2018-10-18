@@ -41,7 +41,20 @@ def handle(statement, source, symboltable, aggregation):
         raise NotImplementedError
 
     elif isinstance(statement, Region):
-        raise NotImplementedError
+        if statement.predicate is None:
+            accept = True
+        else:
+            accept = calculate(statement.predicate, symboltable)
+            if accept is not True and accept is not False:
+                raise adl.error.ADLTypeError("predicate returned a non-boolean: {0}".format(accept), statement.predicate)
+
+        if accept:
+            aggregation = aggregation[statement.name.value]
+            for i in range(len(statement.axes)):
+                aggregation = aggregation.which(symboltable)
+            symboltable = SymbolTable(symboltable)
+            for x in statement.block:
+                handle(x, source, symboltable, aggregation)
 
     elif isinstance(statement, Source):
         if source is None:
@@ -50,7 +63,6 @@ def handle(statement, source, symboltable, aggregation):
             accept = any(fnmatch.fnmatchcase(source, x.value) for x in statement.names)
             if not statement.inclusive:
                 accept = not accept
-
         if accept:
             for x in statement.block:
                 handle(x, source, symboltable, aggregation)
@@ -68,7 +80,14 @@ def initialize(statement, name, aggregation):
             initialize(x, name, aggregation)
 
     elif isinstance(statement, Region):
-        raise NotImplementedError
+        name = name + (statement.name.value,)
+        storage = Namespace(name)
+        for x in statement.block:
+            initialize(x, name, storage)
+
+        for axis in statement.axes[::-1]:
+            storage = Binning.binning(name, axis.binning, axis.expression, storage)
+        aggregation[statement.name.value] = storage
 
     elif isinstance(statement, Vary):
         raise NotImplementedError
@@ -102,20 +121,20 @@ def initialize(statement, name, aggregation):
 class SymbolTable(object):
     @classmethod
     def root(cls, functions, data):
-        out = SymbolTable()
+        out = cls(None)
         out.symbols.update(functions)
         out.symbols.update(data)
         return out
 
-    def __init__(self, parent=None):
-        self.parent = None
+    def __init__(self, parent):
+        self.parent = parent
         self.symbols = {}
 
     def __getitem__(self, where):
         if where.name in self.symbols:
             return self.symbols[where.name]
         elif self.parent is not None:
-            return self.parent[where.name]
+            return self.parent[where]
         else:
             raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.name)), where)
 
@@ -328,6 +347,9 @@ class Binning(object):
     def __repr__(self):
         return "<{0} {1} at {2:012x}>".format(type(self).__name__, ", ".join(repr(x) for x in self.name), id(self))
 
+    def fill(self, symboltable, weight):
+        self.which(symboltable).fill(symboltable, weight)
+
 class RegularBinning(Binning):
     def __init__(self, name, expression, numbins, low, high, storage):
         self.name = name
@@ -371,20 +393,20 @@ class RegularBinning(Binning):
         else:
             raise IndexError("improper index for {0}: {1}".format(type(self).__name__, repr(head)))
 
-    def fill(self, symboltable, weight):
+    def which(self, symboltable):
         x = calculate(self.expression, symboltable)
         if not adl.util.isnum(x):
             raise adl.error.ADLTypeError("expression returned a non-number: {0}".format(x), self.expression)
 
         index = self.numbins * (x - self.low) / (self.high - self.low)
         if index < 0:
-            self.underflow.fill(symboltable, weight)
+            return self.underflow
         elif index >= self.numbins:
-            self.overflow.fill(symboltable, weight)
+            return self.overflow
         elif adl.util.isnan(index):
-            self.nanflow.fill(symboltable, weight)
+            return self.nanflow
         else:
-            self.values[int(math.trunc(index))].fill(symboltable, weight)
+            return self.values[int(math.trunc(index))]
 
 class VariableBinning(Binning):
     def __init__(self, name, expression, edges, storage):
@@ -427,26 +449,31 @@ class VariableBinning(Binning):
         else:
             raise IndexError("improper index for {0}: {1}".format(type(self).__name__, repr(head)))
 
-    def fill(self, symboltable, weight=1):
+    def which(self, symboltable):
         x = calculate(self.expression, symboltable)
         if not adl.util.isnum(x):
             raise adl.error.ADLTypeError("expression returned a non-number: {0}".format(x), self.expression)
 
         if x < self.edges[0]:
-            self.underflow.fill(symboltable, weight)
+            return self.underflow
         elif x >= self.edges[-1]:
-            self.overflow.fill(symboltable, weight)
+            return self.overflow
         elif adl.util.isnan(x):
-            self.nanflow.fill(symboltable, weight)
+            return self.nanflow
         else:
             for i in range(self.numbins):
                 if self.edges[i] <= x < self.edges[i + 1]:
-                    self.values[i].fill(symboltable, weight)
-                    break
+                    return self.values[i]
 
 class Namespace(object):
-    def __init__(self):
+    def __init__(self, name):
+        self.name = name
         self.values = {}
+
+    def zeros_like(self, name):
+        out = Namespace(name)
+        out.values.update({n: x.zeros_like(name + (n,)) for n, x in self.values.items()})
+        return out
 
     def __getitem__(self, where):
         if where == ():
@@ -473,7 +500,7 @@ class Run(object):
         self.clear()
 
     def clear(self):
-        self.aggregation = Namespace()
+        self.aggregation = Namespace(())
         initialize(self.ast, (), self.aggregation)
 
     def __iter__(self, source=None, **data):

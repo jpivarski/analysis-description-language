@@ -23,7 +23,7 @@ class ADLSourceError(ADLError):
 
 class ADLNodeError(ADLSourceError):
     def __init__(self, message, node=None, wide=False):
-        if node is None or node.code is None:
+        if node is None or getattr(node, "code", None) is None:
             ADLError.__init__(self, message)
         elif not wide:
             ADLSourceError.__init__(self, message, node.code, node.lineno, node.col_offset)

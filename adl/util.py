@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 import numbers
 
 import numpy
@@ -28,7 +29,7 @@ def isnum(x, min=None, max=None):
     return True
 
 def isnan(x):
-    return numpy.isnan(x)
+    return isinstance(x, (numbers.Real, numpy.floating)) and math.isnan(x)
 
 def check_args(call, min=0, max=None):
     if len(call.arguments) < min:

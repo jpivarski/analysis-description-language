@@ -61,7 +61,7 @@ class ADLParser(object):
     def p_region(self, p):
         "region : REGION string OPENCURLY block CLOSECURLY"
         #              1      2         3     4          5
-        p[0] = adl.syntaxtree.Region(p[2], None, [], p[5], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Region(p[2], None, [], p[4], **self.pos(p, 1))
 
     def p_region_predicate(self, p):
         "region : REGION string expression OPENCURLY block CLOSECURLY"

@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import adl.error
+
 class AST(object):
     def __init__(self, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         self.code = code
@@ -238,9 +240,11 @@ class Define(Statement):
 class FunctionDefine(Statement):
     def __init__(self, target, body, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(FunctionDefine, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        if not all(isinstance(x, Identifier) for x in target.arguments):
+            raise adl.error.ADLSyntaxError("all parameters in a function definition must be identifiers", code, lineno, col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.target = target
         self.body = body
-
+        
     def __repr__(self):
         return "{0}({1}, {2})".format(type(self).__name__, repr(self.target), repr(self.body))
 

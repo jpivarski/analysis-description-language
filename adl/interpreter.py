@@ -24,10 +24,16 @@ def calculate(expression, symboltable):
         if isinstance(expression.function, Special) and expression.function in Run.special:
             for signature, function in Run.special[expression.function]:
                 if signature(values, expression):
-                    return function(*values)
+                    try:
+                        return function(*values)
+                    except err:
+                        raise adl.error.ADLRuntimeError(str(err), expression)
 
         if isinstance(expression.function, Expression):
-            return calculate(expression.function, symboltable)(*values)
+            try:
+                return calculate(expression.function, symboltable)(*values)
+            except err:
+                raise adl.error.ADLRuntimeError(str(err), expression)
         else:
             raise adl.error.ADLInternalError("cannot apply a {0}; it is not an expression".format(type(expression.function).__name__), expression.function)
         
@@ -39,7 +45,20 @@ def handle(statement, source, symboltable, aggregation):
         symboltable[statement.target] = calculate(statement.expression, symboltable)
 
     elif isinstance(statement, FunctionDefine):
-        raise NotImplementedError
+        parameters = [x.value for x in statement.target.arguments[1:]]
+        frozen = symboltable.frozen()
+
+        def function(*values):
+            if len(parameters) != len(values):
+                raise TypeError("wrong number of arguments: expecting {0}, encountered {1}".format(len(parameters), len(values)))
+            symbols = SymbolTable(frozen)
+            for param, val in zip(parameters, values):
+                symboltable[Identifier(param)] = val
+            for stmt in statement.body[:-1]:
+                handle(stmt, source, symbols, aggregation)
+            return calculate(statement.body[-1], symbols)
+
+        symboltable[statement.target.arguments[0]] = function
 
     elif isinstance(statement, Collect):
         if statement.weight is None:
@@ -643,7 +662,7 @@ Run.special[UnaryPlus] .append((typerequire(float),                          lam
 Run.special[UnaryMinus].append((typerequire(float),                          lambda x: -x))
 Run.special[Power]     .append((typerequire(float, float),                   lambda x, y: x**y))
 
-# constants
+# constants (just pi; `e` is too easily confused with user-defined variables, and it's `exp(1)`)
 Run.builtins["pi"] = math.pi
 
 # basic math

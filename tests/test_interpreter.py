@@ -300,4 +300,7 @@ class Test(unittest.TestCase):
         run = adl.interpreter.Run("y := f(x)")
         f = lambda x: x**2
         out = run(x=[1, 2, 3], f=f)
-        
+        assert out["y"] == [1, 4, 9]
+        assert out["f"][0] is f
+        assert out["f"][1] is f
+        assert out["f"][2] is f

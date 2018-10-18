@@ -184,3 +184,19 @@ class Test(unittest.TestCase):
         run(x=[1, 2, 3], p=[True, False, True])
         assert float(run["stuff", "thingy", 0, "wow"]) == 1
         assert float(run["stuff", "thingy", 1, "wow"]) == 1
+
+    def test_vary(self):
+        run = adl.interpreter.Run("vary 'one' y := 1 'two' y := 2 { count 'stuff' by regular(2, 0.5, 2.5) <- y }")
+        run(x=[1, 2, 3])
+        assert float(run["one", "stuff", 0]) == 3
+        assert float(run["one", "stuff", 1]) == 0
+        assert float(run["two", "stuff", 0]) == 0
+        assert float(run["two", "stuff", 1]) == 3
+
+    def test_vary_two(self):
+        run = adl.interpreter.Run("vary 'one' y := 1; z := 1 'two' y := 2; z := 2 { count 'stuff' by regular(2, 0.5, 2.5) <- z }")
+        run(x=[1, 2, 3])
+        assert float(run["one", "stuff", 0]) == 3
+        assert float(run["one", "stuff", 1]) == 0
+        assert float(run["two", "stuff", 0]) == 0
+        assert float(run["two", "stuff", 1]) == 3

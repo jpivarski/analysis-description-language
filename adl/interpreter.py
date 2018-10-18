@@ -38,7 +38,13 @@ def handle(statement, source, symboltable, aggregation):
         aggregation[statement.name.value].fill(symboltable, weight)
         
     elif isinstance(statement, Vary):
-        raise NotImplementedError
+        for variation in statement.variations:
+            subtable = SymbolTable(symboltable)
+            subaggregation = aggregation[variation.name.value]
+            for x in variation.assignments:
+                handle(x, source, subtable, subaggregation)
+            for x in statement.block:
+                handle(x, source, subtable, subaggregation)
 
     elif isinstance(statement, Region):
         if statement.predicate is None:
@@ -80,6 +86,7 @@ def initialize(statement, name, aggregation):
             initialize(x, name, aggregation)
 
     elif isinstance(statement, Region):
+        adl.util.check_name(statement, aggregation)
         name = name + (statement.name.value,)
         storage = Namespace(name)
         for x in statement.block:
@@ -90,7 +97,13 @@ def initialize(statement, name, aggregation):
         aggregation[statement.name.value] = storage
 
     elif isinstance(statement, Vary):
-        raise NotImplementedError
+        storage = Namespace(name)
+        for x in statement.block:
+            initialize(x, name, storage)
+
+        for variation in statement.variations:
+            adl.util.check_name(variation, aggregation)
+            aggregation[variation.name.value] = storage.zeros_like(name + (variation.name.value,))
 
     elif isinstance(statement, Collect):
         adl.util.check_name(statement, aggregation)

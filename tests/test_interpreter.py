@@ -172,3 +172,15 @@ class Test(unittest.TestCase):
         run(x=[1, 2, 3])
         assert float(run["stuff", 0, "thingy"]) == 1
         assert float(run["stuff", 1, "thingy"]) == 2
+
+    def test_region_count_predicate_binning(self):
+        run = adl.interpreter.Run("region 'stuff' p by regular(2, 0.0, 4.0) <- x { count 'thingy' }")
+        run(x=[1, 2, 3], p=[True, False, True])
+        assert float(run["stuff", 0, "thingy"]) == 1
+        assert float(run["stuff", 1, "thingy"]) == 1
+
+    def test_region_region_count(self):
+        run = adl.interpreter.Run("region 'stuff' p { region 'thingy' by regular(2, 0.0, 4.0) <- x { count 'wow' } }")
+        run(x=[1, 2, 3], p=[True, False, True])
+        assert float(run["stuff", "thingy", 0, "wow"]) == 1
+        assert float(run["stuff", "thingy", 1, "wow"]) == 1

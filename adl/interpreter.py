@@ -345,7 +345,7 @@ class Binning(object):
             raise ADLTypeError("not a binning", call)
 
     def __repr__(self):
-        return "<{0} {1} at {2:012x}>".format(type(self).__name__, ", ".join(repr(x) for x in self.name), id(self))
+        return "<{0} {1} at 0x{2:012x}>".format(type(self).__name__, ", ".join(repr(x) for x in self.name), id(self))
 
     def fill(self, symboltable, weight):
         self.which(symboltable).fill(symboltable, weight)
@@ -469,6 +469,9 @@ class Namespace(object):
     def __init__(self, name):
         self.name = name
         self.values = {}
+
+    def __repr__(self):
+        return "<Namespace at 0x{0:012x}>".format(id(self))
 
     def zeros_like(self, name):
         out = Namespace(name)

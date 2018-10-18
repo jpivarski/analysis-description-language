@@ -72,7 +72,7 @@ def initialize(statement, name, aggregation):
         elif isinstance(statement.statistic, SumStatistic):
             storage = Sum(name, statement.expression)
         elif isinstance(statement.statistic, ProfileStatistic):
-            raise NotImplementedError
+            storage = Profile(name, statement.expression)
         elif isinstance(statement.statistic, FractionStatistic):
             raise NotImplementedError
         else:
@@ -128,6 +128,9 @@ class Storage(object):
             raise adl.error.ADLTypeError("expression returned a non-number: {0}".format(x), self.expression)
         return x
 
+    def __float__(self):
+        return float(self.value())
+
 class Count(Storage):
     def __init__(self, name):
         self.name = name
@@ -138,32 +141,87 @@ class Count(Storage):
         return Count(name)
 
     def __repr__(self):
-        return "<Count {0}: {1} +- {2}>".format(", ".join(repr(x) for x in self.name), self.sumw, math.sqrt(self.sumw2))
+        return "<Count {0}: {1} +- {2}>".format(", ".join(repr(x) for x in self.name), self.value(), self.error())
 
     def fill(self, symboltable, weight):
         self.sumw += weight
         self.sumw2 += weight**2
 
-    def __float__(self):
-        return float(self.sumw)
+    def value(self):
+        return self.sumw
+
+    def error2(self):
+        return self.sumw2
+
+    def error(self):
+        return math.sqrt(self.sumw2)
+
+    def __iter__(self):
+        yield self.value()
+        yield self.error()
 
 class Sum(Storage):
     def __init__(self, name, expression):
         self.name = name
         self.expression = expression
-        self.sum = 0.0
+        self.sumwx = 0.0
 
     def zeros_like(self, name):
         return Sum(name, self.expression)
 
     def __repr__(self):
-        return "<Sum {0}: {1}>".format(", ".join(repr(x) for x in self.name), self.sum)
+        return "<Sum {0}: {1}>".format(", ".join(repr(x) for x in self.name), self.value())
 
     def fill(self, symboltable, weight):
-        self.sum += weight * self.calculate(symboltable)
+        self.sumwx += weight * self.calculate(symboltable)
 
-    def __float__(self):
-        return float(self.sum)
+    def value(self):
+        return self.sumwx
+
+    def __iter__(self):
+        yield self.value()
+
+class Profile(Storage):
+    def __init__(self, name, expression):
+        self.name = name
+        self.expression = expression
+        self.sumw = 0.0
+        self.sumw2 = 0.0
+        self.sumwx = 0.0
+        self.sumwx2 = 0.0
+
+    def zeros_like(self, name):
+        return Profile(name, self.expression)
+
+    def __repr__(self):
+        return "<Profile {0}: {1} +- {2}>".format(", ".join(repr(x) for x in self.name), self.value(), self.error())
+
+    def fill(self, symboltable, weight):
+        x = self.calculate(symboltable)
+        self.sumw += weight
+        self.sumw2 += weight**2
+        self.sumwx += weight * x
+        self.sumwx2 += weight * x**2
+
+    def value(self):
+        if self.sumw == 0:
+            return 0.0
+        else:
+            return self.sumwx / self.sumw
+
+    def error2(self):
+        if self.sumw2 == 0:
+            return 0.0
+        else:
+            effectivecount = self.sumw**2 / self.sumw2
+            return (self.sumwx2 / self.sumw - self.value()**2) / effectivecount
+
+    def error(self):
+        return math.sqrt(self.error2())
+
+    def __iter__(self):
+        yield self.value()
+        yield self.error()
 
 class Binning(object):
     @staticmethod

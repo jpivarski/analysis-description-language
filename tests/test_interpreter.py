@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import math
 import unittest
 
 import adl.interpreter
@@ -74,12 +75,12 @@ class Test(unittest.TestCase):
         run(x=[1, 2, 3])
         assert float(run["stuff"]) == 6
 
-    def test_count_weight(self):
+    def test_sum_weight(self):
         run = adl.interpreter.Run("sum 'stuff' x weight y")
         run(x=[1, 2, 3], y=[2, 2, 2])
         assert float(run["stuff"]) == 12
 
-    def test_count_regular(self):
+    def test_sum_regular(self):
         run = adl.interpreter.Run("sum 'stuff' y by regular(2, 0.0, 4.0) <- x")
         run(x=[1, 2, 3], y=[2, 2, 2])
         assert float(run["stuff"][0]) == 2
@@ -88,7 +89,7 @@ class Test(unittest.TestCase):
         assert float(run["stuff"].overflow) == 0
         assert float(run["stuff"].nanflow) == 0
 
-    def test_count_regular_weight(self):
+    def test_sum_regular_weight(self):
         run = adl.interpreter.Run("sum 'stuff' z by regular(2, 0.0, 4.0) <- x weight y")
         run(x=[1, 2, 3], y=[2, 2, 2], z=[3, 3, 3])
         assert float(run["stuff"][0]) == 6
@@ -96,3 +97,31 @@ class Test(unittest.TestCase):
         assert float(run["stuff"].underflow) == 0
         assert float(run["stuff"].overflow) == 0
         assert float(run["stuff"].nanflow) == 0
+
+    def test_profile(self):
+        run = adl.interpreter.Run("profile 'stuff' x")
+        run(x=[1, 2, 3])
+        assert tuple(run["stuff"]) == (2.0, math.sqrt((14.0 / 3.0 - 2.0**2) / 3.0))
+
+    def test_profile_weight(self):
+        run = adl.interpreter.Run("profile 'stuff' x weight y")
+        run(x=[1, 2, 3], y=[2, 2, 2])
+        assert tuple(run["stuff"]) == (2.0, math.sqrt((14.0 / 3.0 - 2.0**2) / 3.0))
+
+    def test_profile_regular(self):
+        run = adl.interpreter.Run("profile 'stuff' y by regular(2, 0.0, 4.0) <- x")
+        run(x=[1, 2, 3], y=[2, 2, 2])
+        assert tuple(run["stuff"][0]) == (2.0, 0.0)
+        assert tuple(run["stuff"][1]) == (2.0, 0.0)
+        assert tuple(run["stuff"].underflow) == (0.0, 0.0)
+        assert tuple(run["stuff"].overflow) == (0.0, 0.0)
+        assert tuple(run["stuff"].nanflow) == (0.0, 0.0)
+
+    def test_profile_regular_weight(self):
+        run = adl.interpreter.Run("profile 'stuff' z by regular(2, 0.0, 4.0) <- x weight y")
+        run(x=[1, 2, 3], y=[2, 2, 2], z=[3, 3, 3])
+        assert tuple(run["stuff"][0]) == (3.0, 0.0)
+        assert tuple(run["stuff"][1]) == (3.0, 0.0)
+        assert tuple(run["stuff"].underflow) == (0.0, 0.0)
+        assert tuple(run["stuff"].overflow) == (0.0, 0.0)
+        assert tuple(run["stuff"].nanflow) == (0.0, 0.0)

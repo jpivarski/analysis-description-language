@@ -88,6 +88,21 @@ def handle(statement, source, symboltable, aggregation):
             weight = calculate(statement.weight, symboltable)
         aggregation[statement.name.value].fill(symboltable, weight)
 
+    elif isinstance(statement, For):
+        raise NotImplementedError
+
+        HERE
+
+        lists = {}
+        for inclusion in statement.inclusions:
+            lists[inclusion.target.name] = calculate(inclusion.expression)
+
+        for loop:
+            subtable = SymbolTable(symboltable)
+
+
+
+
     elif isinstance(statement, Vary):
         for variation in statement.variations:
             subtable = SymbolTable(symboltable)

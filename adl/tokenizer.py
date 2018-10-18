@@ -17,13 +17,15 @@ class ADLLexer(object):
                 "profile":  "PROFILE",
                 "fraction": "FRACTION",
                 "weight":   "WEIGHT",
+                "for":      "FOR",
+                "in":       "IN",
                 "vary":     "VARY",
                 "region":   "REGION",
                 "source":   "SOURCE"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "COLONEQ", "LEFTARROW", "RIGHTARROW",
-              "OR", "AND", "NOT", "BY", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "VARY", "REGION", "SOURCE",
+              "OR", "AND", "NOT", "BY", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "FOR", "IN", "VARY", "REGION", "SOURCE",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",

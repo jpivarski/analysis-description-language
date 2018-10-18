@@ -324,3 +324,9 @@ class Test(unittest.TestCase):
         f = lambda g, x: g(x)
         out = run(x=[1, 2, 3], f=f)
         out["y"] == [1, 4, 9]
+
+    def test_count_nested(self):
+        run = adl.interpreter.Run("count 'stuff'")
+        run(x=[[], [1], [2, 3], [4, 5, 6]])
+        assert float(run["stuff"]) == 4
+

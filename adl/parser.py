@@ -78,6 +78,33 @@ class ADLParser(object):
         #              1      2          3  4    5         6     7          8
         p[0] = adl.syntaxtree.Region(p[2], p[3], p[5], p[7], **self.pos(p, 1))
 
+    ###################################################### for
+
+    def p_for(self, p):
+        "for : FOR inclusions OPENCURLY block CLOSECURLY"
+        #        1           2         3     4          5
+        p[0] = adl.syntaxtree.For(p[2], p[4], **self.pos(p, 1))
+
+    def p_inclusions(self, p):
+        "inclusions : inclusion"
+        #                     1
+        p[0] = [p[1]]
+
+    def p_inclusions_extend(self, p):
+        "inclusions : inclusions inclusion"
+        #                        1       2
+        self.require_separator(p[1][-1], p[2])
+        p[0] = p[1] + [p[2]]
+
+    def p_inclusions_extend_semi(self, p):
+        "inclusions : inclusions SEMICOLON inclusion"
+        #                        1         2       3
+        p[0] = p[1] + [p[3]]
+
+    def p_inclusion(self, p):
+        "inclusion : IDENTIFIER IN expression"
+        p[0] = adl.syntaxtree.Define(adl.syntaxtree.Identifier(p[1], **self.pos(p, 1)), p[3], **self.pos(p, 2))
+
     ###################################################### vary
 
     def p_vary(self, p):
@@ -96,19 +123,19 @@ class ADLParser(object):
         p[0] = [p[1]] + p[2]
 
     def p_namedassignments(self, p):
-        "namedassignments : string assignment"
+        "namedassignments : string onlyassignment"
         #                        1          2
         p[0] = adl.syntaxtree.Variation(p[1], [p[2]], **self.pos(p, 1))
 
     def p_namedassignments_extend(self, p):
-        "namedassignments : namedassignments assignment"
+        "namedassignments : namedassignments onlyassignment"
         #                                  1          2
         self.require_separator(p[1].assignments[-1], p[2])
         p[1].assignments.append(p[2])
         p[0] = p[1]
         
     def p_namedassignments_extend_semi(self, p):
-        "namedassignments : namedassignments SEMICOLON assignment"
+        "namedassignments : namedassignments SEMICOLON onlyassignment"
         #                                  1         2          3
         p[1].assignments.append(p[3])
         p[0] = p[1]
@@ -144,6 +171,11 @@ class ADLParser(object):
         "block : region block"
         #             1     2
         p[0] = [p[1]] + p[2]
+
+    def p_block_for(self, p):
+        "block : for"
+        #          1
+        p[0] = [p[1]]
 
     def p_block_vary(self, p):
         "block : vary"
@@ -363,6 +395,11 @@ class ADLParser(object):
         p[0] = p[1] + [adl.syntaxtree.Axis(p[2], p[4], **self.pos(p, 3))]
 
     ###################################################### assignment (identifiers and functions)
+
+    def p_onlyassignment(self, p):
+        "onlyassignment : IDENTIFIER COLONEQ expression"
+        #                          1       2          3
+        p[0] = adl.syntaxtree.Define(adl.syntaxtree.Identifier(p[1], **self.pos(p, 1)), p[3], **self.pos(p, 2))
 
     def p_assignment(self, p):
         "assignment : IDENTIFIER COLONEQ expression"
@@ -601,7 +638,7 @@ class ADLParser(object):
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Literal(p[3])], **self.pos(p, 2))
 
     def p_trailer_subscript(self, p):
-        "trailer : trailer OPENBRACKET arglist CLOSEBRACKET"
+        "trailer : trailer OPENBRACKET exprlist CLOSEBRACKET"
         #                1           2       3            4
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Subscript(**self.pos(p, 2)), [p[1]] + p[3], **self.pos(p, 2))
 
@@ -689,6 +726,16 @@ class ADLParser(object):
     def p_arglist_extend(self, p):
         "arglist : arg COMMA arglist"
         #            1     2       3
+        p[0] = [p[1]] + p[3]
+
+    def p_exprlist_single(self, p):
+        "exprlist : expression"
+        #                    1
+        p[0] = [p[1]]
+
+    def p_exprlist_extend(self, p):
+        "exprlist : expression COMMA exprlist"
+        #                    1     2        3
         p[0] = [p[1]] + p[3]
 
     ###################################################### error handling

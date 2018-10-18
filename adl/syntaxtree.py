@@ -380,6 +380,36 @@ class Variation(AST):
         if not topdown:
             yield self
 
+class For(Statement):
+    def __init__(self, inclusions, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(For, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.inclusions = inclusions
+        self.block = block
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.inclusions), repr(self.block))
+
+    def children(self):
+        return self.inclusions + self.block
+    
+    def leftmost(self):
+        return self.inclusions[0].leftmost()
+
+    def rightmost(self):
+        return self.block[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.inclusions:
+            for y in x.walk(topdown=topdown):
+                yield y
+        for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
+
 class Vary(Statement):
     def __init__(self, variations, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Vary, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)

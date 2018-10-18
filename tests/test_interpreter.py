@@ -291,3 +291,7 @@ class Test(unittest.TestCase):
     def test_define_function(self):
         run = adl.interpreter.Run("f(z) := z**2 ; y := f(x)")
         assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [1, 4, 9]}
+
+    def test_define_function_multiline(self):
+        run = adl.interpreter.Run("f(z) := { q := z; q**2 } ; y := f(x)")
+        assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [1, 4, 9]}

@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 class ADLError(Exception): pass
 
 class ADLSourceError(ADLError):

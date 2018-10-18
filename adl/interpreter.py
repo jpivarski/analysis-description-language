@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import fnmatch
 import math
 
@@ -23,7 +25,7 @@ def calculate(expression, symboltable):
 
 def handle(statement, symboltable, source, aggregation):
     if isinstance(statement, Define):
-        raise NotImplementedError
+        symboltable[statement.target] = calculate(statement.expression, symboltable)
 
     elif isinstance(statement, FunctionDefine):
         raise NotImplementedError
@@ -128,7 +130,10 @@ class Counter(Storage):
     def fill(self, symboltable, weight):
         self.sumw += weight
         self.sumw2 += weight**2
-        
+
+    def __float__(self):
+        return float(self.sumw)
+
 class Binning(object):
     @staticmethod
     def binning(call, expression, storage):

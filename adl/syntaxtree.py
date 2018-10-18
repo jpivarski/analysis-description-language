@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 class AST(object):
     def __init__(self, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         self.code = code

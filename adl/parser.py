@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import ply.yacc
 
 import adl.syntaxtree
@@ -689,7 +691,7 @@ def parse(code):
     parser = ADLParser()
     lexer = adl.tokenizer.ADLLexer()
 
-    parser.build(write_tables=True, tabmodule="parsertable", errorlog=ply.yacc.NullLogger())
+    parser.build(write_tables=True, tabmodule="parsertable", debug=False, debuglog=ply.yacc.NullLogger(), errorlog=ply.yacc.NullLogger())
     lexer.build()
 
     return parser.parser.parse(code, lexer=lexer.lexer, tracking=True)

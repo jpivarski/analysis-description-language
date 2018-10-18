@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import numbers
 
 import numpy

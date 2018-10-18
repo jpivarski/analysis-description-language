@@ -3,6 +3,7 @@
 import math
 import unittest
 
+import adl.error
 import adl.interpreter
 
 class Test(unittest.TestCase):
@@ -304,3 +305,9 @@ class Test(unittest.TestCase):
         assert out["f"][0] is f
         assert out["f"][1] is f
         assert out["f"][2] is f
+
+    def test_external_function_exception(self):
+        run = adl.interpreter.Run("y := f(x)")
+        def f(x):
+            raise Exception("hello")
+        self.assertRaises(adl.error.ADLRuntimeError, lambda: run(x=[1, 2, 3], f=f))

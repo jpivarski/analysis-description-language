@@ -24,10 +24,22 @@ def calculate(expression, symboltable):
         if isinstance(expression.function, Special) and expression.function in Run.special:
             for signature, function in Run.special[expression.function]:
                 if signature(values, expression):
-                    return function(*values)
+                    try:
+                        return function(*values)
+                    except Exception as err:
+                        if isinstance(err, adl.error.ADLError):
+                            raise
+                        else:
+                            raise adl.error.ADLRuntimeError(str(err), expression)
 
         if isinstance(expression.function, Expression):
-            return calculate(expression.function, symboltable)(*values)
+            try:
+                return calculate(expression.function, symboltable)(*values)
+            except Exception as err:
+                if isinstance(err, adl.error.ADLError):
+                    raise
+                else:
+                    raise adl.error.ADLRuntimeError(str(err), expression)
         
     else:
         raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)

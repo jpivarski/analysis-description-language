@@ -145,8 +145,10 @@ def initialize(statement, name, aggregation):
 class SymbolTable(object):
     @classmethod
     def root(cls, functions, data):
-        out = cls(None)
-        out.symbols.update(functions)
+        fcntable = cls.__new__(cls)
+        fcntable.parent = None
+        fcntable.symbols = functions
+        out = cls(fcntable)
         out.symbols.update(data)
         return out
 
@@ -640,3 +642,62 @@ Run.special[Mod]       .append((typerequire(float, float),                   lam
 Run.special[UnaryPlus] .append((typerequire(float),                          lambda x: +x))
 Run.special[UnaryMinus].append((typerequire(float),                          lambda x: -x))
 Run.special[Power]     .append((typerequire(float, float),                   lambda x, y: x**y))
+
+# constants
+Run.builtins["pi"] = math.pi
+
+# basic math
+Run.builtins["sqrt"] = math.sqrt
+Run.builtins["exp"] = math.exp
+Run.builtins["exp2"] = lambda x: float(numpy.exp2(float(x)))
+Run.builtins["log"] = math.log
+Run.builtins["log2"] = math.log2
+Run.builtins["log10"] = math.log10
+Run.builtins["sin"] = math.sin
+Run.builtins["cos"] = math.cos
+Run.builtins["tan"] = math.tan
+Run.builtins["arcsin"] = math.asin
+Run.builtins["arccos"] = math.acos
+Run.builtins["arctan"] = math.atan
+Run.builtins["arctan2"] = math.atan2
+Run.builtins["hypot"] = math.hypot
+Run.builtins["rad2deg"] = lambda x: x * 180.0 / math.pi
+Run.builtins["deg2rad"] = lambda x: x * math.pi / 180.0
+Run.builtins["sinh"] = math.sinh
+Run.builtins["cosh"] = math.cosh
+Run.builtins["tanh"] = math.tanh
+Run.builtins["arcsinh"] = math.asinh
+Run.builtins["arccosh"] = math.acosh
+Run.builtins["arctanh"] = math.atanh
+
+# special functions
+Run.builtins["erf"] = math.erf
+Run.builtins["erfc"] = math.erfc
+Run.builtins["factorial"] = math.factorial
+Run.builtins["gamma"] = math.gamma
+Run.builtins["lgamma"] = math.lgamma
+
+# rounding and discontinuous
+Run.builtins["abs"] = abs
+Run.builtins["round"] = round
+Run.builtins["floor"] = math.floor
+Run.builtins["ceil"] = math.ceil
+Run.builtins["sign"] = lambda x: -1 if x < 0 else 1 if x > 0 else 0
+Run.builtins["heaviside"] = lambda x, middle=0.5: 0 if x < 0 else 1 if x > 0 else middle
+
+# fast calculations of common combinations
+Run.builtins["expm1"] = math.expm1
+Run.builtins["log1p"] = math.log1p
+Run.builtins["ldexp"] = math.ldexp
+Run.builtins["logaddexp"] = lambda x, y: float(numpy.logaddexp(x, y))
+Run.builtins["logaddexp2"] = lambda x, y: float(numpy.logaddexp2(x, y))
+
+# number type
+Run.builtins["isfinite"] = math.isfinite
+Run.builtins["isinf"] = math.isinf
+Run.builtins["isnan"] = math.isnan
+
+# bit-level detail
+Run.builtins["nextafter"] = lambda x: float(numpy.nextafter(x, numpy.inf))
+Run.builtins["nextbefore"] = lambda x: float(numpy.nextafter(x, -numpy.inf))
+Run.builtins["nexttoward"] = lambda x, y: float(numpy.nextafter(x, y))

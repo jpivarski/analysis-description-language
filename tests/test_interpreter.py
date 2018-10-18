@@ -283,3 +283,7 @@ class Test(unittest.TestCase):
     def test_expression_power(self):
         run = adl.interpreter.Run("z := x**y")
         assert run(x=[1, 2, 3], y=[2, 2, 2]) == {"x": [1, 2, 3], "y": [2, 2, 2], "z": [1, 4, 9]}
+
+    def test_expression_sin(self):
+        run = adl.interpreter.Run("y := sin(x)")
+        assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [math.sin(1), math.sin(2), math.sin(3)]}

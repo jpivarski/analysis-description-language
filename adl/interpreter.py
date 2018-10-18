@@ -572,23 +572,31 @@ class Run(object):
             yield self(source=source, **{n: x[i] for n, x in data.items()})
 
     def __call__(self, source=None, **data):
-        if len(data) == 0:
+        functions = {n: x for n, x in data.items() if callable(x)}
+        justdata = {n: x for n, x in data.items() if not callable(x)}
+
+        if len(justdata) == 0:
             return {}
 
         try:
-            lengths = [len(x) for x in data.values()]
+            lengths = [len(x) for x in justdata.values()]
             assert all(x == lengths[0] for x in lengths)
         except (TypeError, AssertionError):
             return self.single(source=source, **data)
 
         out = None
         for i in range(lengths[0]):
-            single = self.single(source=source, **{n: x[i] for n, x in data.items()})
+            onedata = {n: x[i] for n, x in justdata.items()}
+            for n, x in functions.items():
+                onedata[n] = x
+
+            single = self.single(source=source, **onedata)
             if out is None:
                 out = {n: [x] for n, x in single.items()}
             else:
                 for n, x in single.items():
                     out[n].append(x)
+
         return out
 
     def single(self, source=None, **data):

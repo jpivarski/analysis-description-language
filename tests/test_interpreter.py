@@ -295,3 +295,9 @@ class Test(unittest.TestCase):
     def test_define_function_multiline(self):
         run = adl.interpreter.Run("f(z) := { q := z; q**2 } ; y := f(x)")
         assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [1, 4, 9]}
+
+    def test_external_function(self):
+        run = adl.interpreter.Run("y := f(x)")
+        f = lambda x: x**2
+        out = run(x=[1, 2, 3], f=f)
+        

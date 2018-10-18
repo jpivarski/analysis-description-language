@@ -424,9 +424,9 @@ class Region(Statement):
         if not topdown:
             yield self
 
-class Regions(Statement):
+class Split(Statement):
     def __init__(self, name, axes, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Regions, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        super(Split, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.name = name
         self.axes = axes
         self.block = block

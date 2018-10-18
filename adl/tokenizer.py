@@ -9,6 +9,7 @@ class ADLLexer(object):
     reserved = {"and":      "AND",
                 "or":       "OR",
                 "not":      "NOT",
+                "by":       "BY",
                 "count":    "COUNT",
                 "sum":      "SUM",
                 "profile":  "PROFILE",
@@ -16,12 +17,12 @@ class ADLLexer(object):
                 "weight":   "WEIGHT",
                 "vary":     "VARY",
                 "region":   "REGION",
-                "regions":  "REGIONS",
+                "split":    "SPLIT",
                 "source":   "SOURCE"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
               "COLONEQ", "LEFTARROW", "RIGHTARROW",
-              "OR", "AND", "NOT", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "VARY", "REGION", "REGIONS", "SOURCE",
+              "OR", "AND", "NOT", "BY", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "VARY", "REGION", "SPLIT", "SOURCE",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",

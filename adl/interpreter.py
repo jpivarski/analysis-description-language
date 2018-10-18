@@ -8,12 +8,12 @@ import adl.parser
 import adl.util
 from adl.syntaxtree import *
             
-def calculate(expression, symbols):
+def calculate(expression, symboltable):
     if isinstance(expression, Literal):
         return expression.value
 
     elif isinstance(expression, Identifier):
-        return symbols[expression]
+        return symboltable[expression]
 
     elif isinstance(expression, Call):
         raise NotImplementedError
@@ -21,7 +21,7 @@ def calculate(expression, symbols):
     else:
         raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)
 
-def handle(statement, symbols, source, aggregation):
+def handle(statement, symboltable, source, aggregation):
     if isinstance(statement, Define):
         raise NotImplementedError
 
@@ -30,7 +30,7 @@ def handle(statement, symbols, source, aggregation):
 
     elif isinstance(statement, Collect):
         weight = 1
-        namespace[statement.name.value].fill(weight)
+        aggregation[statement.name.value].fill(symboltable, weight)
 
     elif isinstance(statement, Vary):
         raise NotImplementedError
@@ -47,10 +47,10 @@ def handle(statement, symbols, source, aggregation):
     else:
         raise adl.error.ADLInternalError("cannot handle a {0}; it is not a statement".format(type(statement).__name__), statement)
 
-def initialize(node, namespace):
+def initialize(node, aggregation):
     if isinstance(node, Suite):
         for x in node.statements:
-            initialize(x, namespace)
+            initialize(x, aggregation)
 
     elif isinstance(node, Source):
         raise NotImplementedError
@@ -65,9 +65,9 @@ def initialize(node, namespace):
         raise NotImplementedError
 
     elif isinstance(node, Collect):
-        adl.util.check_name(node, namespace)
+        adl.util.check_name(node, aggregation)
         if isinstance(node.statistic, Count) and len(node.axes) == 0:
-            namespace[node.name.value] = Counter()
+            aggregation[node.name.value] = Counter()
         else:
             raise NotImplementedError
 
@@ -90,10 +90,8 @@ class SymbolTable(object):
     @classmethod
     def root(cls, functions, data):
         out = SymbolTable()
-        for n, x in functions.items():
-            out[Identifier(n)] = x
-        for n, x in data.items():
-            out[Identifier(n)] = x
+        out.symbols.update(functions)
+        out.symbols.update(data)
         return out
 
     def __init__(self, parent=None):
@@ -133,7 +131,7 @@ class Counter(Storage):
         else:
             raise IndexError("too many dimensions in index")
 
-    def fill(self, symbols, weight):
+    def fill(self, symboltable, weight):
         self.sumw += weight
         self.sumw2 += weight**2
         
@@ -192,20 +190,20 @@ class RegularBinning(Binning):
         else:
             return self.nanflow[tail]
 
-    def fill(self, symbols, weight):
-        x = calculate(self.expression, symbols)
+    def fill(self, symboltable, weight):
+        x = calculate(self.expression, symboltable)
         if not adl.util.isnum(x):
             raise adl.error.ADLTypeError("expression returned a non-number: {0}".format(x), self.expression)
 
         index = self.numbins * (x - self.low) / (self.high - self.low)
         if index < 0:
-            self.underflow.fill(symbols, weight)
+            self.underflow.fill(symboltable, weight)
         elif index >= self.numbins:
-            self.overflow.fill(symbols, weight)
+            self.overflow.fill(symboltable, weight)
         elif adl.util.isnan(index):
-            self.nanflow.fill(symbols, weight)
+            self.nanflow.fill(symboltable, weight)
         else:
-            self.values[int(math.trunc(index))].fill(symbols, weight)
+            self.values[int(math.trunc(index))].fill(symboltable, weight)
 
 class VariableBinning(Binning):
     def __init__(self, expression, edges, storage):
@@ -237,21 +235,21 @@ class VariableBinning(Binning):
         else:
             return self.nanflow[tail]
 
-    def fill(self, symbols, weight=1):
-        x = calculate(self.expression, symbols)
+    def fill(self, symboltable, weight=1):
+        x = calculate(self.expression, symboltable)
         if not adl.util.isnum(x):
             raise adl.error.ADLTypeError("expression returned a non-number: {0}".format(x), self.expression)
 
         if x < self.edges[0]:
-            self.underflow.fill(symbols, weight)
+            self.underflow.fill(symboltable, weight)
         elif x >= self.edges[-1]:
-            self.overflow.fill(symbols, weight)
+            self.overflow.fill(symboltable, weight)
         elif adl.util.isnan(x):
-            self.nanflow.fill(symbols, weight)
+            self.nanflow.fill(symboltable, weight)
         else:
             for i in self.numbins:
                 if self.edges[i] <= x < self.edges[i + 1]:
-                    self.values[i].fill(symbols, weight)
+                    self.values[i].fill(symboltable, weight)
                     break
 
 class Namespace(object):
@@ -290,13 +288,19 @@ class Run(object):
         for i in range(min(len(x) for x in data.values())):
             yield self(source=source, **{n: x[i] for n, x in data.items()})
 
-    def run(self, source=None, **data):
+    def __call__(self, source=None, **data):
         if len(data) == 0:
             return {}
 
+        try:
+            lengths = [len(x) for x in data.values()]
+            assert all(x == lengths[0] for x in lengths)
+        except (TypeError, AssertionError):
+            return self.single(source=source, **data)
+        
         out = None
-        for i in range(min(len(x) for x in data.values())):
-            single = self(source=source, **{n: x[i] for n, x in data.items()})
+        for i in range(lengths[0]):
+            single = self.single(source=source, **{n: x[i] for n, x in data.items()})
             if out is None:
                 out = {n: [x] for n, x in single.items()}
             else:
@@ -304,11 +308,11 @@ class Run(object):
                     out[n].append(x)
         return out
 
-    def __call__(self, source=None, **data):
-        symbols = SymbolTable.root(self.builtins, data)
+    def single(self, source=None, **data):
+        symboltable = SymbolTable.root(self.builtins, data)
         for statement in self.ast.statements:
-            handle(statement, symbols, source, self.aggregation)
-        return {} # FIXME: return all the assigned non-functions
+            handle(statement, symboltable, source, self.aggregation)
+        return symboltable.symbols
 
     def __getitem__(self, where):
         return self.aggregation[where]

@@ -290,4 +290,4 @@ class Test(unittest.TestCase):
 
     def test_define_function(self):
         run = adl.interpreter.Run("f(z) := z**2 ; y := f(x)")
-        print(run(x=[1, 2, 3]))
+        assert run(x=[1, 2, 3]) == {"x": [1, 2, 3], "y": [1, 4, 9]}

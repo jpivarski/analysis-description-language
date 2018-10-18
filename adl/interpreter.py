@@ -24,18 +24,10 @@ def calculate(expression, symboltable):
         if isinstance(expression.function, Special) and expression.function in Run.special:
             for signature, function in Run.special[expression.function]:
                 if signature(values, expression):
-                    try:
-                        return function(*values)
-                    except err:
-                        raise adl.error.ADLRuntimeError(str(err), expression)
+                    return function(*values)
 
         if isinstance(expression.function, Expression):
-            try:
-                return calculate(expression.function, symboltable)(*values)
-            except err:
-                raise adl.error.ADLRuntimeError(str(err), expression)
-        else:
-            raise adl.error.ADLInternalError("cannot apply a {0}; it is not an expression".format(type(expression.function).__name__), expression.function)
+            return calculate(expression.function, symboltable)(*values)
         
     else:
         raise adl.error.ADLInternalError("cannot calculate a {0}; it is not an expression".format(type(expression).__name__), expression)
@@ -45,7 +37,7 @@ def handle(statement, source, symboltable, aggregation):
         symboltable[statement.target] = calculate(statement.expression, symboltable)
 
     elif isinstance(statement, FunctionDefine):
-        parameters = [x.value for x in statement.target.arguments[1:]]
+        parameters = [x.name for x in statement.target.arguments]
         frozen = symboltable.frozen()
 
         def function(*values):
@@ -53,12 +45,13 @@ def handle(statement, source, symboltable, aggregation):
                 raise TypeError("wrong number of arguments: expecting {0}, encountered {1}".format(len(parameters), len(values)))
             symbols = SymbolTable(frozen)
             for param, val in zip(parameters, values):
-                symboltable[Identifier(param)] = val
+                symbols[Identifier(param)] = val
             for stmt in statement.body[:-1]:
                 handle(stmt, source, symbols, aggregation)
             return calculate(statement.body[-1], symbols)
 
-        symboltable[statement.target.arguments[0]] = function
+        symboltable[statement.target.function] = function
+        symboltable.tagfunction(statement.target.function)
 
     elif isinstance(statement, Collect):
         if statement.weight is None:
@@ -188,6 +181,26 @@ class SymbolTable(object):
 
     def __contains__(self, where):
         return where.name in self.symbols
+
+    def frozen(self):
+        if self.parent is None:
+            return self   # don't copy the builtin functions; they don't change
+        else:
+            out = self.__class__.__new__(self.__class__)
+            out.parent = self.parent.frozen()
+            out.symbols = dict(self.symbols)
+            return out
+
+    def tagfunction(self, where):
+        if not hasattr(self, "_functions"):
+            self._functions = set()
+        self._functions.add(where.name)
+
+    def dropfunctions(self):
+        if hasattr(self, "_functions"):
+            for n in list(self.symbols):
+                if n in self._functions:
+                    del self.symbols[n]
 
 class Storage(object):
     def __getitem__(self, where):
@@ -582,6 +595,7 @@ class Run(object):
         symboltable = SymbolTable.root(self.builtins, data)
         for statement in self.ast.statements:
             handle(statement, source, symboltable, self.aggregation)
+        symboltable.dropfunctions()
         return symboltable.symbols
 
     def __getitem__(self, where):

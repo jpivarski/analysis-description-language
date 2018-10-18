@@ -240,12 +240,8 @@ class Namespace(object):
         return where in self.values
 
 def aggregation(node, namespace):
-    if isinstance(node, BlockSuite):
-        for x in node.block:
-            aggregation(x, namespace)
-
-    elif isinstance(node, BodySuite):
-        for x in node.body:
+    if isinstance(node, Suite):
+        for x in node.statements:
             aggregation(x, namespace)
 
     elif isinstance(node, Source):
@@ -297,8 +293,8 @@ class Run(object):
         aggregation(self.ast, self.aggregation)
 
     def __iter__(self, source=None, **data):
-        if not isinstance(self.ast, BodySuite):
-            raise adl.error.ADLTypeError("this ADL source file/string is not an expression")
+        if not isinstance(self.ast.statements[-1], Expression):
+            raise adl.error.ADLTypeError("this ADL source file/string ends with a {0}, not an expression; cannot iterate".format(type(self.ast).__name__))
         for i in range(min(len(x) for x in data.values())):
             yield self(source=source, **{n: x[i] for n, x in data.items()})
 
@@ -309,17 +305,14 @@ class Run(object):
     def __call__(self, source=None, **data):
         symbols = SymbolTable.root(self.builtins, data)
 
-        if isinstance(self.ast, BodySuite):
-            for statement in self.ast.body[:-1]:
+        if isinstance(self.ast.statements[-1], Expression):
+            for statement in self.ast.statements[:-1]:
                 handle(statement, symbols, source, self.aggregation)
-            return calculate(self.ast.body[-1], symbols)
-
-        elif isinstance(self.ast, BlockSuite):
-            for statement in self.ast.block:
-                handle(statement, symbols, source, self.aggregation)
+            return calculate(self.ast.statements[-1], symbols)
 
         else:
-            raise adl.error.ADLInternalError("cannot execute a {0}; it is not an expression or a set of region/vary blocks".format(type(statement).__name__), statement)
+            for statement in self.ast.statements:
+                handle(statement, symbols, source, self.aggregation)
 
     def __getitem__(self, where):
         return self.aggregation[where]

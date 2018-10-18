@@ -597,55 +597,27 @@ class Source(Statement):
         if not topdown:
             yield self
 
-class Suite(AST): pass
-
-class BlockSuite(Suite):
-    def __init__(self, block, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(BlockSuite, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-        self.block = block
+class Suite(AST):
+    def __init__(self, statements, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Suite, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.statements = statements
 
     def __repr__(self):
-        return "{0}({1})".format(type(self).__name__, repr(self.block))
+        return "{0}({1})".format(type(self).__name__, repr(self.statements))
 
     def children(self):
-        return list(self.block)
+        return list(self.statements)
 
     def leftmost(self):
-        return self.block.leftmost()
+        return self.statements[0].leftmost()
 
     def rightmost(self):
-        return self.block.rightmost()
+        return self.statements[-1].rightmost()
 
     def walk(self, topdown=True):
         if topdown:
             yield self
-        for x in self.block:
-            for y in x.walk(topdown=topdown):
-                yield y
-        if not topdown:
-            yield self
-
-class BodySuite(Suite):
-    def __init__(self, body, source=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(BodySuite, self).__init__(source=source, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-        self.body = body
-
-    def __repr__(self):
-        return "{0}({1})".format(type(self).__name__, repr(self.body))
-
-    def children(self):
-        return list(self.body)
-
-    def leftmost(self):
-        return self.body.leftmost()
-
-    def rightmost(self):
-        return self.body.rightmost()
-
-    def walk(self, topdown=True):
-        if topdown:
-            yield self
-        for x in self.body:
+        for x in self.statements:
             for y in x.walk(topdown=topdown):
                 yield y
         if not topdown:

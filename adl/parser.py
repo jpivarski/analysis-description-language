@@ -35,15 +35,139 @@ class ADLParser(object):
         if "\n" not in left.source[left.rightmost().lexspan[1]:right.leftmost().lexspan[0]]:
             raise adl.error.ADLSyntaxError("missing semicolon or newline", left.source, right.leftmost().lineno, right.leftmost().col_offset)
 
-    def p_suite_block(self, p):
-        "suite : block"
-        #            1
-        p[0] = adl.syntaxtree.BlockSuite(p[1], **self.pos(p, 1))
+    ###################################################### suite
 
-    def p_suite_body(self, p):
-        "suite : body"
+    def p_suite_expression(self, p):
+        "suite : expression"
+        #             1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_source(self, p):
+        "suite : source"
+        #             1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_source(self, p):
+        "suite : source suite"
+        #             1     2
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_notsource(self, p):
+        "suite : notsource"
+        #                1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_notsource(self, p):
+        "suite : notsource suite"
+        #                1     2
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_regions(self, p):
+        "suite : regions"
+        #              1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_regions(self, p):
+        "suite : regions suite"
+        #              1     2
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_region(self, p):
+        "suite : region"
+        #             1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_region(self, p):
+        "suite : region suite"
+        #             1     2
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_vary(self, p):
+        "suite : vary"
         #           1
-        p[0] = adl.syntaxtree.BodySuite(p[1], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_vary(self, p):
+        "suite : vary suite"
+        #           1     2
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_count(self, p):
+        "suite : count"
+        #            1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_count(self, p):
+        "suite : count suite"
+        #            1     2
+        self.require_separator(p[1], p[2].statements[0])
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_extend_count_semi(self, p):
+        "suite : count SEMICOLON suite"
+        #            1         2     3
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
+
+    def p_suite_sum(self, p):
+        "suite : sum"
+        #          1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_sum(self, p):
+        "suite : sum suite"
+        #          1     2
+        self.require_separator(p[1], p[2].statements[0])
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_extend_sum_semi(self, p):
+        "suite : sum SEMICOLON suite"
+        #              1         2     3
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
+
+    def p_suite_profile(self, p):
+        "suite : profile"
+        #              1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_profile(self, p):
+        "suite : profile suite"
+        #              1     2
+        self.require_separator(p[1], p[2].statements[0])
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_extend_profile_semi(self, p):
+        "suite : profile SEMICOLON suite"
+        #              1         2     3
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
+
+    def p_suite_fraction(self, p):
+        "suite : fraction"
+        #               1
+        p[0] = adl.syntaxtree.Suite([p[1]])
+
+    def p_suite_extend_fraction(self, p):
+        "suite : fraction suite"
+        #               1     2
+        self.require_separator(p[1], p[2].statements[0])
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_extend_fraction_semi(self, p):
+        "suite : fraction SEMICOLON suite"
+        #               1         2     3
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
+
+    def p_suite_extend_assignment(self, p):
+        "suite : assignment suite"
+        #                 1     2
+        self.require_separator(p[1], p[2].statements[0])
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[2].statements)
+
+    def p_suite_extend_assignment_semi(self, p):
+        "suite : assignment SEMICOLON suite"
+        #                 1         2     3
+        p[0] = adl.syntaxtree.Suite([p[1]] + p[3].statements)
+
+    ###################################################### source and notsource
 
     def p_source(self, p):
         "source : SOURCE stringlist OPENCURLY block CLOSECURLY"
@@ -55,15 +179,21 @@ class ADLParser(object):
         #              1      2          3         4     5          6
         p[0] = adl.syntaxtree.Source(p[3], p[5], inclusive=False, **self.pos(p, 2))
 
+    ###################################################### regions
+
     def p_regions(self, p):
         "regions : REGIONS string axis OPENCURLY block CLOSECURLY"
         #                1      2    3         4     5          6
         p[0] = adl.syntaxtree.Regions(p[2], p[3], p[5], **self.pos(p, 1))
 
+    ###################################################### region
+
     def p_region(self, p):
         "region : REGION string expression OPENCURLY block CLOSECURLY"
         #              1      2          3         4     5          6
         p[0] = adl.syntaxtree.Region(p[2], p[3], p[5], **self.pos(p, 1))
+
+    ###################################################### vary
 
     def p_vary(self, p):
         "vary : VARY variations OPENCURLY block CLOSECURLY"
@@ -97,6 +227,8 @@ class ADLParser(object):
         #                                  1         2          3
         p[1].assignments.append(p[3])
         p[0] = p[1]
+
+    ###################################################### block
 
     def p_block_source(self, p):
         "block : source"
@@ -223,54 +355,12 @@ class ADLParser(object):
         #                 1         2     3
         p[0] = [p[1]] + p[3]
 
+    ###################################################### body
+
     def p_body_expression(self, p):
         "body : expression"
         #                1
         p[0] = [p[1]]
-
-    def p_body_extend_count(self, p):
-        "body : count body"
-        #           1    2
-        self.require_separator(p[1], p[2][0])
-        p[0] = [p[1]] + p[2]
-
-    def p_body_extend_count_semi(self, p):
-        "body : count SEMICOLON body"
-        #           1         2    3
-        p[0] = [p[1]] + p[3]
-
-    def p_body_extend_sum(self, p):
-        "body : sum body"
-        #             1    2
-        self.require_separator(p[1], p[2][0])
-        p[0] = [p[1]] + p[2]
-
-    def p_body_extend_sum_semi(self, p):
-        "body : sum SEMICOLON body"
-        #             1         2    3
-        p[0] = [p[1]] + p[3]
-
-    def p_body_extend_profile(self, p):
-        "body : profile body"
-        #             1    2
-        self.require_separator(p[1], p[2][0])
-        p[0] = [p[1]] + p[2]
-
-    def p_body_extend_profile_semi(self, p):
-        "body : profile SEMICOLON body"
-        #             1         2    3
-        p[0] = [p[1]] + p[3]
-
-    def p_body_extend_fraction(self, p):
-        "body : fraction body"
-        #              1    2
-        self.require_separator(p[1], p[2][0])
-        p[0] = [p[1]] + p[2]
-
-    def p_body_extend_fraction_semi(self, p):
-        "body : fraction SEMICOLON body"
-        #              1         2    3
-        p[0] = [p[1]] + p[3]
 
     def p_body_extend_assignment(self, p):
         "body : assignment body"
@@ -282,6 +372,8 @@ class ADLParser(object):
         "body : assignment SEMICOLON body"
         #                1         2    3
         p[0] = [p[1]] + p[3]
+
+    ###################################################### count
 
     def p_count(self, p):
         "count : COUNT string"
@@ -304,6 +396,8 @@ class ADLParser(object):
         axis, weight = p[3]
         p[0] = adl.syntaxtree.Count(p[2], axis, weight, **self.pos(p, 1))
 
+    ###################################################### sum
+
     def p_sum(self, p):
         "sum : SUM string expression"
         #                1      2          3
@@ -324,6 +418,8 @@ class ADLParser(object):
         #                1      2          3          4
         axis, weight = p[4]
         p[0] = adl.syntaxtree.Sum(p[2], p[3], axis, weight, **self.pos(p, 1))
+
+    ###################################################### profile
 
     def p_profile(self, p):
         "profile : PROFILE string expression"
@@ -346,6 +442,8 @@ class ADLParser(object):
         axis, weight = p[4]
         p[0] = adl.syntaxtree.Profile(p[2], p[3], axis, weight, **self.pos(p, 1))
 
+    ###################################################### fraction
+
     def p_fraction(self, p):
         "fraction : FRACTION string expression"
         #                  1      2          3
@@ -367,6 +465,8 @@ class ADLParser(object):
         axis, weight = p[4]
         p[0] = adl.syntaxtree.Fraction(p[2], p[3], axis, weight, **self.pos(p, 1))
 
+    ###################################################### axis and axisweight
+
     def p_axisweight(self, p):
         "axisweight : axis WEIGHT expression"
         #                1      2          3
@@ -381,6 +481,8 @@ class ADLParser(object):
         "axis : axis call LEFTARROW expression"
         #          1    2         3          4
         p[0] = p[1] + [adl.syntaxtree.Axis(p[2], p[4], **self.pos(p, 3))]
+
+    ###################################################### assignment (identifiers and functions)
 
     def p_assignment(self, p):
         "assignment : IDENTIFIER COLONEQ expression"
@@ -397,6 +499,8 @@ class ADLParser(object):
         #                1       2         3    4          5
         p[0] = adl.syntaxtree.FunctionDefine(p[1], p[4], **self.pos(p, 2))
 
+    ###################################################### inline functions
+
     def p_inline_identifier(self, p):
         "inline : IDENTIFIER RIGHTARROW expression"
         #                  1          2          3
@@ -412,6 +516,8 @@ class ADLParser(object):
         #                 1       2          3          4          5
         p[0] = adl.syntaxtree.Inline(p[2], p[5], **self.pos(p, 4))
 
+    ###################################################### expression precedence: logical or
+
     def p_expression(self, p):
         "expression : andchain"
         #                    1
@@ -421,6 +527,8 @@ class ADLParser(object):
         "expression : andchain OR andchain"
         #                    1  2        3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Or(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    ###################################################### expression precedence: logical and
 
     def p_andchain(self, p):
         "andchain : notchain"
@@ -432,6 +540,8 @@ class ADLParser(object):
         #                  1   2        3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
+    ###################################################### expression precedence: logical not
+
     def p_notchain(self, p):
         "notchain : compare"
         #                 1
@@ -441,6 +551,8 @@ class ADLParser(object):
         "notchain : NOT compare"
         #             1       2
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Not(**self.pos(p, 1)), [p[2]], **self.pos(p, 1))
+
+    ###################################################### expression precedence: comparisons
 
     def p_compare(self, p):
         "compare : arith"
@@ -513,6 +625,8 @@ class ADLParser(object):
         pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
+    ###################################################### expression precedence: + and -
+
     def p_arith(self, p):
         "arith : term"
         #           1
@@ -527,6 +641,8 @@ class ADLParser(object):
         "arith : term MINUS term"
         #           1     2    3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Minus(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    ###################################################### expression precedence: * and / and %
 
     def p_term(self, p):
         "term : factor"
@@ -548,6 +664,8 @@ class ADLParser(object):
         #            1   2      3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Mod(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p2, ))
 
+    ###################################################### expression precedence: unary + and -
+
     def p_factor(self, p):
         "factor : power"
         #             1
@@ -563,6 +681,8 @@ class ADLParser(object):
         #             1     2
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.UnaryMinus(**self.pos(p, 1)), [p[2]])
 
+    ###################################################### expression precedence: **
+
     def p_power(self, p):
         "power : trailer"
         #              1
@@ -572,6 +692,8 @@ class ADLParser(object):
         "power : trailer POWER trailer"
         #              1     2       3
         p[0] = adl.syntaxtree.Call(adl.syntaxtree.Power(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+
+    ###################################################### expression precedence: . and [] and ()
 
     def p_trailer_atom(self, p):
         "trailer : atom"
@@ -603,6 +725,8 @@ class ADLParser(object):
         #             1         2          3
         p[0] = adl.syntaxtree.Call(p[1], [], **self.pos(p, 2))
 
+    ###################################################### expression precedence: atoms
+
     def p_atom_parens(self, p):
         "atom : OPENPAREN atom CLOSEPAREN"
         #               1    2          3
@@ -612,6 +736,23 @@ class ADLParser(object):
         "atom : string"
         #            1
         p[0] = p[1]
+
+    def p_atom_literal_floatnumber(self, p):
+        "atom : FLOAT_NUMBER"
+        #                  1
+        p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
+
+    def p_atom_literal_decnumber(self, p):
+        "atom : DEC_NUMBER"
+        #                1
+        p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
+
+    def p_atom_identifier(self, p):
+        "atom : IDENTIFIER"
+        #                1
+        p[0] = adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))
+
+    ###################################################### stringlist and string
 
     def p_stringlist(self, p):
         "stringlist : string"
@@ -633,20 +774,7 @@ class ADLParser(object):
         #              1
         p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
 
-    def p_atom_literal_floatnumber(self, p):
-        "atom : FLOAT_NUMBER"
-        #                  1
-        p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
-
-    def p_atom_literal_decnumber(self, p):
-        "atom : DEC_NUMBER"
-        #                1
-        p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
-
-    def p_atom_identifier(self, p):
-        "atom : IDENTIFIER"
-        #                1
-        p[0] = adl.syntaxtree.Identifier(p[1], **self.pos(p, 1))
+    ###################################################### argument lists
 
     def p_arg_expression(self, p):
         "arg : expression"
@@ -667,6 +795,8 @@ class ADLParser(object):
         "arglist : arg COMMA arglist"
         #            1     2       3
         p[0] = [p[1]] + p[3]
+
+    ###################################################### error handling
 
     def p_error(self, p):
         if p is None:

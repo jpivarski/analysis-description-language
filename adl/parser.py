@@ -131,7 +131,7 @@ class ADLParser(object):
     def p_variations_extend(self, p):
         "variations : namedassignments variations"
         #                            1          2
-        self.require_separator(p[1][-1].assignments[-1], p[2][0])
+        self.require_separator(p[1].assignments[-1], p[2][0])
         p[0] = [p[1]] + p[2]
 
     def p_variations_extend_semi(self, p):

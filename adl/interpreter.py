@@ -472,18 +472,18 @@ class Binning(object):
     def binning(name, call, expression, storage):
         if isinstance(call, Call) and call.function.name == "regular":
             adl.util.check_args(call, 3, 3)
-            if not isinstance(call.arguments[0], Literal) and adl.util.isint(call.arguments[0].value, 1):
+            if not isinstance(call.arguments[0], Literal) or not adl.util.isint(call.arguments[0].value, 1):
                 raise adl.error.ADLTypeError("numbins must be a literal positive integer", call.arguments[0])
-            if not isinstance(call.arguments[1], Literal) and adl.util.isnum(call.arguments[1].value):
+            if not isinstance(call.arguments[1], Literal) or not adl.util.isnum(call.arguments[1].value):
                 raise adl.error.ADLTypeError("low must be a literal number", call.arguments[1])
-            if not isinstance(call.arguments[2], Literal) and adl.util.isnum(call.arguments[2].value):
+            if not isinstance(call.arguments[2], Literal) or not adl.util.isnum(call.arguments[2].value):
                 raise adl.error.ADLTypeError("high must be a literal number", call.arguments[2])
             return RegularBinning(name, expression, call.arguments[0].value, call.arguments[1].value, call.arguments[2].value, storage)
 
         elif isinstance(call, Call) and call.function.name == "variable":
             adl.util.check_args(call, 1, None)
             for x in call.arguments:
-                if not adl.util.isnum(x.value):
+                if not isinstance(x, Literal) or not adl.util.isnum(x.value):
                     raise adl.error.ADLTypeError("edges must be literal numbers", x)
             return VariableBinning(name, expression, [x.value for x in call.arguments], storage)
 

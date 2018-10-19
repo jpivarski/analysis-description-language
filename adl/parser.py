@@ -458,7 +458,7 @@ class ADLParser(object):
     def p_expression_(self, p):
         "expression : andchain OR andchain"
         #                    1  2        3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Or(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Or(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     ###################################################### expression precedence: logical and
 
@@ -470,7 +470,7 @@ class ADLParser(object):
     def p_andchain_(self, p):
         "andchain : notchain AND notchain"
         #                  1   2        3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     ###################################################### expression precedence: logical not
 
@@ -482,7 +482,7 @@ class ADLParser(object):
     def p_notchain_(self, p):
         "notchain : NOT compare"
         #             1       2
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Not(**self.pos(p, 1)), [p[2]], **self.pos(p, 1))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Not(**self.pos(p, 1)), [p[2]], **self.pos(p, 1))
 
     ###################################################### expression precedence: comparisons
 
@@ -494,68 +494,68 @@ class ADLParser(object):
     def p_compare_isequal(self, p):
         "compare : arith EQEQUAL arith"
         #              1       2     3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.IsEqual(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.IsEqual(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_compare_isequal_chain(self, p):    # optional: for chained x == y == z
         "compare : compare EQEQUAL arith"
         #                1       2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.IsEqual(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+        pair = [p[1], adl.syntaxtree.Call.maybe(adl.syntaxtree.IsEqual(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
                
     def p_compare_notequal(self, p):
         "compare : arith NOTEQUAL arith"
         #              1        2     3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.NotEqual(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.NotEqual(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_compare_notequal_chain(self, p):    # optional: for chained x != y != z
         "compare : compare NOTEQUAL arith"
         #                1        2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.NotEqual(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+        pair = [p[1], adl.syntaxtree.Call.maybe(adl.syntaxtree.NotEqual(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
     def p_compare_lesseq(self, p):
         "compare : arith LESSEQ arith"
         #              1      2     3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.LessEq(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.LessEq(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_compare_lesseq_chain(self, p):    # optional: for chained x <= y <= z
         "compare : compare LESSEQ arith"
         #                1      2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.LessEq(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+        pair = [p[1], adl.syntaxtree.Call.maybe(adl.syntaxtree.LessEq(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
     def p_compare_less(self, p):
         "compare : arith LESS arith"
         #              1    2     3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Less(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Less(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_compare_less_chain(self, p):    # optional: for chained x < y < z
         "compare : compare LESS arith"
         #                1    2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.Less(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+        pair = [p[1], adl.syntaxtree.Call.maybe(adl.syntaxtree.Less(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
     def p_compare_greatereq(self, p):
         "compare : arith GREATEREQ arith"
         #              1         2     3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.GreaterEq(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.GreaterEq(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_compare_greatereq_chain(self, p):    # optional: for chained x >= y >= z
         "compare : compare GREATEREQ arith"
         #                1         2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.GreaterEq(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+        pair = [p[1], adl.syntaxtree.Call.maybe(adl.syntaxtree.GreaterEq(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
     def p_compare_greater(self, p):
         "compare : arith GREATER arith"
         #              1       2     3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_compare_greater_chain(self, p):    # optional: for chained x > y > z
         "compare : compare GREATER arith"
         #                1       2     3
-        pair = [p[1], adl.syntaxtree.Call(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
+        pair = [p[1], adl.syntaxtree.Call.maybe(adl.syntaxtree.Greater(**self.pos(p, 2)), [p[1].arguments[1], p[3]], **self.pos(p, 2))]
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.And(**self.span(pair[0], pair[1])), pair, **self.span(pair[0], pair[1]))
 
     ###################################################### expression precedence: + and -
 
@@ -567,12 +567,12 @@ class ADLParser(object):
     def p_arith_plus(self, p):
         "arith : term PLUS term"
         #           1    2    3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Plus(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Plus(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_arith_minus(self, p):
         "arith : term MINUS term"
         #           1     2    3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Minus(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Minus(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     ###################################################### expression precedence: * and / and %
 
@@ -584,17 +584,17 @@ class ADLParser(object):
     def p_term_factor_times(self, p):
         "term : factor TIMES factor"
         #            1     2      3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Times(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Times(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_term_factor_div(self, p):
         "term : factor DIV factor"
         #            1   2      3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Div(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Div(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     def p_term_factor_mod(self, p):
         "term : factor MOD factor"
         #            1   2      3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Mod(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Mod(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     ###################################################### expression precedence: unary + and -
 
@@ -606,12 +606,12 @@ class ADLParser(object):
     def p_factor_unaryplus(self, p):
         "factor : PLUS power"
         #            1     2
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.UnaryPlus(**self.pos(p, 1)), [p[2]])
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.UnaryPlus(**self.pos(p, 1)), [p[2]], **self.pos(p, 1))
 
     def p_factor_unaryminus(self, p):
         "factor : MINUS power"
         #             1     2
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.UnaryMinus(**self.pos(p, 1)), [p[2]])
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.UnaryMinus(**self.pos(p, 1)), [p[2]], **self.pos(p, 1))
 
     ###################################################### expression precedence: **
 
@@ -623,7 +623,7 @@ class ADLParser(object):
     def p_power_trailer(self, p):
         "power : trailer POWER trailer"
         #              1     2       3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Power(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Power(**self.pos(p, 2)), [p[1], p[3]], **self.pos(p, 2))
 
     ###################################################### expression precedence: . and [] and ()
 
@@ -635,12 +635,12 @@ class ADLParser(object):
     def p_trailer_attribute(self, p):
         "trailer : trailer DOT IDENTIFIER"
         #                1   2          3
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Literal(p[3])], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Literal(p[3])], **self.pos(p, 2))
 
     def p_trailer_subscript(self, p):
         "trailer : trailer OPENBRACKET exprlist CLOSEBRACKET"
         #                1           2       3            4
-        p[0] = adl.syntaxtree.Call(adl.syntaxtree.Subscript(**self.pos(p, 2)), [p[1]] + p[3], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Subscript(**self.pos(p, 2)), [p[1]] + p[3], **self.pos(p, 2))
 
     def p_trailer_call(self, p):
         "trailer : call"
@@ -650,12 +650,12 @@ class ADLParser(object):
     def p_call_arglist(self, p):
         "call : trailer OPENPAREN arglist CLOSEPAREN"
         #             1         2       3          4
-        p[0] = adl.syntaxtree.Call(p[1], p[3], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(p[1], p[3], **self.pos(p, 2))
 
     def p_call_arglist_empty(self, p):
         "call : trailer OPENPAREN CLOSEPAREN"
         #             1         2          3
-        p[0] = adl.syntaxtree.Call(p[1], [], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(p[1], [], **self.pos(p, 2))
 
     ###################################################### expression precedence: atoms
 

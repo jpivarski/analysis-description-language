@@ -129,6 +129,16 @@ class Identifier(Expression):
         return "{0}({1})".format(type(self).__name__, repr(self.name))
 
 class Call(Expression):
+    @classmethod
+    def maybe(cls, function, arguments, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        import adl.interpreter
+        out = cls(function, arguments, code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        if ((isinstance(function, Special) and function in adl.interpreter.Run.special) or (isinstance(function, Identifier) and function.name in adl.interpreter.Run.builtins)) and all(isinstance(x, Literal) for x in arguments):
+            symboltable = adl.interpreter.SymbolTable.root(adl.interpreter.Run.builtins, {})
+            return Literal(adl.interpreter.calculate(out, symboltable), code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        else:
+            return out
+
     def __init__(self, function, arguments, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Call, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
         self.function = function

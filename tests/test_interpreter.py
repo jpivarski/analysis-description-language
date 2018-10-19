@@ -320,7 +320,7 @@ class Test(unittest.TestCase):
         out["y"] == [1, 4, 9]
 
     def test_functional_inline(self):
-        run = adl.interpreter.Run("y := f(z -> z**2, x)")
+        run = adl.interpreter.Run("y := f(z => z**2, x)")
         f = lambda g, x: g(x)
         out = run(x=[1, 2, 3], f=f)
         out["y"] == [1, 4, 9]
@@ -334,3 +334,8 @@ class Test(unittest.TestCase):
         run = adl.interpreter.Run("for xi in x { count 'stuff' }")
         run(x=[[], [1], [2, 3], [4, 5, 6]])
         assert float(run["stuff"]) == 6
+
+    def test_list_map(self):
+        run = adl.interpreter.Run("y := x.map(xi => xi**2)")
+        assert run(x=[[], [1], [2, 3], [4, 5, 6]])["y"] == [[], [1], [4, 9], [16, 25, 36]]
+

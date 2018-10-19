@@ -23,14 +23,17 @@ def calculate(expression, symboltable):
 
         if isinstance(expression.function, Special) and expression.function in Run.special:
             for signature, function in Run.special[expression.function]:
-                if signature(values, expression):
-                    try:
+                accept = signature(values, expression)
+                try:
+                    if accept is True:
                         return function(*values)
-                    except Exception as err:
-                        if isinstance(err, adl.error.ADLError):
-                            raise
-                        else:
-                            raise adl.error.ADLRuntimeError(str(err), expression)
+                    elif isinstance(accept, Expression):
+                        return function(accept, symboltable, *values)
+                except Exception as err:
+                    if isinstance(err, adl.error.ADLError):
+                        raise
+                    else:
+                        raise adl.error.ADLRuntimeError(str(err), expression)
 
         if isinstance(expression.function, Expression):
             try:
@@ -94,6 +97,7 @@ def handle(statement, source, symboltable, aggregation):
         for loopvar in statement.loopvars:
             loopvars.append((loopvar.target, calculate(loopvar.expression, symboltable)))
             try:
+                iter(loopvars[-1][1])
                 lengths.append(len(loopvars[-1][1]))
             except TypeError:
                 raise adl.errors.ADLTypeError("loop variable {0} must be iterable with a known length".format(repr(loopvar.target.name)), loopvar)
@@ -604,7 +608,25 @@ class Namespace(object):
 
 class Run(object):
     builtins = {}
-    special = {}
+    special = {Attribute:  [],
+               Subscript:  [],
+               Or:         [],
+               And:        [],
+               Not:        [],
+               IsEqual:    [],
+               NotEqual:   [],
+               LessEq:     [],
+               Less:       [],
+               GreaterEq:  [],
+               Greater:    [],
+               Plus:       [],
+               Minus:      [],
+               Times:      [],
+               Div:        [],
+               Mod:        [],
+               UnaryPlus:  [],
+               UnaryMinus: [],
+               Power:      []}
 
     def __init__(self, code):
         if isinstance(code, str):
@@ -706,25 +728,26 @@ def typetest(*types):
         return True
     return out
 
-Run.special[Attribute]  = []
-Run.special[Subscript]  = []
-Run.special[Or]         = []
-Run.special[And]        = []
-Run.special[Not]        = []
-Run.special[IsEqual]    = []
-Run.special[NotEqual]   = []
-Run.special[LessEq]     = []
-Run.special[Less]       = []
-Run.special[GreaterEq]  = []
-Run.special[Greater]    = []
-Run.special[Plus]       = []
-Run.special[Minus]      = []
-Run.special[Times]      = []
-Run.special[Div]        = []
-Run.special[Mod]        = []
-Run.special[UnaryPlus]  = []
-Run.special[UnaryMinus] = []
-Run.special[Power]      = []
+def islist(values, expression):
+    if len(values) == 0:
+        return False
+    try:
+        iter(values[0]), len(values[0])
+    except TypeError:
+        return False
+    else:
+        if isinstance(values[0], dict):
+            return False
+        else:
+            return expression
+
+def listfunctions(expression, symboltable, data, name):
+    if name == "map":
+        return lambda inline: [inline(x) for x in data]
+    else:
+        raise adl.error.ADLTypeError("lists do not have a method named {0}".format(repr(name)), expression)
+
+Run.special[Attribute].append((islist, listfunctions))
 
 def dodot(obj, attr):
     try:

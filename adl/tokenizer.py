@@ -59,7 +59,7 @@ class ADLLexer(object):
 
     t_COLONEQ      = r":="
     t_LEFTARROW    = r"<-"
-    t_RIGHTARROW   = r"->"
+    t_RIGHTARROW   = r"=>"
     t_OR           = r"or"
     t_AND          = r"and"
     t_NOT          = r"not"

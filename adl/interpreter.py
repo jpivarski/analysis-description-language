@@ -796,6 +796,14 @@ def islist(values, expression):
         else:
             return expression
 
+def extremeby(expression, data, f, minby):
+    if len(data) == 0:
+        raise adl.error.ADLTypeError("{0} called on empty list".format("minby" if minby else "maxby"), expression)
+    elif minby:
+        return min(data, key=f)
+    else:
+        return max(data, key=f)
+
 def listfunctions(expression, data, name):
     if name == "size":
         return len(data)
@@ -831,16 +839,10 @@ def listfunctions(expression, data, name):
             return max(data)
 
     elif name == "minby":
-        if len(data) == 0:
-            return lambda f: []
-        else:
-            return lambda f: [min(data, key=f)]
+        return lambda f: extremeby(expression, data, f, True)
 
     elif name == "maxby":
-        if len(data) == 0:
-            return lambda f: []
-        else:
-            return lambda f: [max(data, key=f)]
+        return lambda f: extremeby(expression, data, f, False)
 
     else:
         raise adl.error.ADLTypeError("lists do not have a method named {0}".format(repr(name)), expression)

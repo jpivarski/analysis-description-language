@@ -797,35 +797,38 @@ def islist(values, expression):
             return expression
 
 def listfunctions(expression, data, name):
-    if name == "map":
+    if name == "size":
+        return len(data)
+
+    elif name == "map":
         return lambda inline: [inline(x) for x in data]
 
     elif name == "filter":
         return lambda inline: [x for x in data if inline(x)]
 
     elif name == "flatten":
-        return lambda: [item for sublist in data for item in sublist]
+        return [item for sublist in data for item in sublist]
 
     elif name == "cross":
         return lambda other: [x + (y,) if isinstance(x, tuple) else (x, y) for x in data for y in other]
 
     elif name == "pairs":
-        return lambda: [(data[i], data[j]) for i in range(len(data)) for j in range(i, len(data))]
+        return [(data[i], data[j]) for i in range(len(data)) for j in range(i, len(data))]
 
     elif name == "distincts":
-        return lambda: [(data[i], data[j]) for i in range(len(data)) for j in range(i + 1, len(data))]
+        return [(data[i], data[j]) for i in range(len(data)) for j in range(i + 1, len(data))]
 
     elif name == "min":
         if len(data) == 0:
-            return lambda: float("inf")
+            return float("inf")
         else:
-            return lambda: min(data)
+            return min(data)
 
     elif name == "max":
         if len(data) == 0:
-            return lambda: float("-inf")
+            return float("-inf")
         else:
-            return lambda: max(data)
+            return max(data)
 
     elif name == "minby":
         if len(data) == 0:

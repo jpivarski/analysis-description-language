@@ -652,7 +652,7 @@ class ADLParser(object):
     def p_trailer_attribute(self, p):
         "trailer : trailer DOT IDENTIFIER"
         #                1   2          3
-        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Literal(p[3])], **self.pos(p, 2))
+        p[0] = adl.syntaxtree.Call.maybe(adl.syntaxtree.Attribute(**self.pos(p, 2)), [p[1], adl.syntaxtree.Literal(p[3], **self.pos(p, 3))], **self.pos(p, 2))
 
     def p_trailer_subscript(self, p):
         "trailer : trailer OPENBRACKET exprlist CLOSEBRACKET"

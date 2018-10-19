@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import copy
 import fnmatch
 import math
 import numbers
@@ -10,6 +11,56 @@ import adl.error
 import adl.parser
 import adl.util
 from adl.syntaxtree import *
+
+###################################################### interpretation of the AST
+
+class SymbolTable(object):
+    @classmethod
+    def root(cls, functions, data):
+        fcntable = cls.__new__(cls)
+        fcntable.parent = None
+        fcntable.symbols = functions
+        out = cls(fcntable)
+        out.symbols.update(data)
+        return out
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.symbols = {}
+
+    def __getitem__(self, where):
+        if where.name in self.symbols:
+            return self.symbols[where.name]
+        elif self.parent is not None:
+            return self.parent[where]
+        else:
+            raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.name)), where)
+
+    def __setitem__(self, where, what):
+        self.symbols[where.name] = what
+
+    def __contains__(self, where):
+        return where.name in self.symbols
+
+    def frozen(self):
+        if self.parent is None:
+            return self   # don't copy the builtin functions; they don't change
+        else:
+            out = self.__class__.__new__(self.__class__)
+            out.parent = self.parent.frozen()
+            out.symbols = dict(self.symbols)
+            return out
+
+    def tagfunction(self, where):
+        if not hasattr(self, "_functions"):
+            self._functions = set()
+        self._functions.add(where.name)
+
+    def dropfunctions(self):
+        if hasattr(self, "_functions"):
+            for n in list(self.symbols):
+                if n in self._functions:
+                    del self.symbols[n]
 
 def calculate(expression, symboltable):
     if isinstance(expression, Literal):
@@ -33,7 +84,7 @@ def calculate(expression, symboltable):
                     if isinstance(err, adl.error.ADLError):
                         raise
                     else:
-                        raise adl.error.ADLRuntimeError(str(err), expression)
+                        raise adl.error.ADLRuntimeError("function raised {0}: {1}".format(type(err).__name__, str(err)), expression)
 
         if isinstance(expression.function, Expression):
             try:
@@ -42,7 +93,7 @@ def calculate(expression, symboltable):
                 if isinstance(err, adl.error.ADLError):
                     raise
                 else:
-                    raise adl.error.ADLRuntimeError(str(err), expression)
+                    raise adl.error.ADLRuntimeError("function raised {0}: {1}".format(type(err).__name__, str(err)), expression)
         
     elif isinstance(expression, Inline):
         parameters = [x.name for x in expression.parameters]
@@ -210,53 +261,34 @@ def initialize(statement, name, aggregation):
     else:
         raise adl.error.ADLInternalError("cannot initialize {0}; it is not a statement".format(type(statement).__name__), statement)
 
-class SymbolTable(object):
-    @classmethod
-    def root(cls, functions, data):
-        fcntable = cls.__new__(cls)
-        fcntable.parent = None
-        fcntable.symbols = functions
-        out = cls(fcntable)
-        out.symbols.update(data)
+###################################################### statistical aggregation
+
+class Namespace(object):
+    def __init__(self, name):
+        self.name = name
+        self.values = {}
+
+    def __repr__(self):
+        return "<Namespace at 0x{0:012x}>".format(id(self))
+
+    def zeros_like(self, name):
+        out = Namespace(name)
+        out.values.update({n: x.zeros_like(name + (n,)) for n, x in self.values.items()})
         return out
 
-    def __init__(self, parent):
-        self.parent = parent
-        self.symbols = {}
-
     def __getitem__(self, where):
-        if where.name in self.symbols:
-            return self.symbols[where.name]
-        elif self.parent is not None:
-            return self.parent[where]
-        else:
-            raise adl.error.ADLNameError("no symbol named {0} in this scope".format(repr(where.name)), where)
+        if where == ():
+            return self
+        if not isinstance(where, tuple):
+            where = (where,)
+        head, tail = where[0], where[1:]
+        return self.values[head][tail]
 
     def __setitem__(self, where, what):
-        self.symbols[where.name] = what
+        self.values[where] = what
 
     def __contains__(self, where):
-        return where.name in self.symbols
-
-    def frozen(self):
-        if self.parent is None:
-            return self   # don't copy the builtin functions; they don't change
-        else:
-            out = self.__class__.__new__(self.__class__)
-            out.parent = self.parent.frozen()
-            out.symbols = dict(self.symbols)
-            return out
-
-    def tagfunction(self, where):
-        if not hasattr(self, "_functions"):
-            self._functions = set()
-        self._functions.add(where.name)
-
-    def dropfunctions(self):
-        if hasattr(self, "_functions"):
-            for n in list(self.symbols):
-                if n in self._functions:
-                    del self.symbols[n]
+        return where in self.values
 
 class Storage(object):
     def __getitem__(self, where):
@@ -579,32 +611,7 @@ class VariableBinning(Binning):
                 if self.edges[i] <= x < self.edges[i + 1]:
                     return self.values[i]
 
-class Namespace(object):
-    def __init__(self, name):
-        self.name = name
-        self.values = {}
-
-    def __repr__(self):
-        return "<Namespace at 0x{0:012x}>".format(id(self))
-
-    def zeros_like(self, name):
-        out = Namespace(name)
-        out.values.update({n: x.zeros_like(name + (n,)) for n, x in self.values.items()})
-        return out
-
-    def __getitem__(self, where):
-        if where == ():
-            return self
-        if not isinstance(where, tuple):
-            where = (where,)
-        head, tail = where[0], where[1:]
-        return self.values[head][tail]
-
-    def __setitem__(self, where, what):
-        self.values[where] = what
-
-    def __contains__(self, where):
-        return where in self.values
+###################################################### executable ADL document
 
 class Run(object):
     builtins = {}
@@ -670,6 +677,7 @@ class Run(object):
 
         else:
             try:
+                assert all(not isinstance(x, dict) for x in justdata.values())
                 lengths = [len(x) for x in justdata.values()]
                 assert all(x == lengths[0] for x in lengths)
 
@@ -700,17 +708,19 @@ class Run(object):
     def __getitem__(self, where):
         return self.aggregation[where]
 
+###################################################### library for the interpreter
+
 def typerequire(*types):
     def out(values, expression):
         if len(expression.arguments) != len(types):
             raise adl.error.ADLTypeError("expected {0} arguments, found {1}".format(len(types), len(expression.arguments)))
         for val, arg, tpe in zip(values, expression.arguments, types):
             if tpe is bool and val is not True and val is not False:
-                raise adl.error.ADLTypeError("value is not a boolean: {0}".format(repr(val), arg))
+                raise adl.error.ADLTypeError("value is not a boolean: {0}".format(repr(val), arg), expression)
             elif tpe is float and not isinstance(val, (numbers.Real, numpy.integer, numpy.floating)):
-                raise adl.error.ADLTypeError("value is not a number: {0}".format(repr(val), arg))
+                raise adl.error.ADLTypeError("value is not a number: {0}".format(repr(val), arg), expression)
             elif tpe is int and not isinstance(val, (numbers.Integral, numpy.integer)):
-                raise adl.error.ADLTypeError("value is not an integer: {0}".format(repr(val), arg))
+                raise adl.error.ADLTypeError("value is not an integer: {0}".format(repr(val), arg), expression)
         return True
     return out
 
@@ -727,6 +737,22 @@ def typetest(*types):
                 return False
         return True
     return out
+
+def has(data, name):
+    if hasattr(data, name):
+        return True
+    try:
+        return name in data
+    except TypeError:
+        return False
+
+def get(data, name):
+    try:
+        return getattr(data, name)
+    except AttributeError:
+        return data[name]
+
+###################################################### lists
 
 def islist(values, expression):
     if len(values) == 0:
@@ -789,44 +815,264 @@ def listfunctions(expression, data, name):
 
 Run.special[Attribute].append((islist, listfunctions))
 
-def is_pxpypzE(values, expression):
+###################################################### Lorentz vectors
+
+def is_pxpypz(values, expression):
     if len(values) == 0:
         return False
-    elif not hasattr(values[0], "px") and hasattr(values[0], "py") and hasattr(values[0], "pz") and hasattr(values[0], "E"):
+    elif not has(values[0], "px") or not has(values[0], "py") or not has(values[0], "pz") or not (has(values[0], "energy") or has(values[0], "mass")):
         return False
     else:
         return expression
 
-def is_pxpypzm(values, expression):
+def is_ptetaphi(values, expression):
     if len(values) == 0:
         return False
-    elif not hasattr(values[0], "px") and hasattr(values[0], "py") and hasattr(values[0], "pz") and hasattr(values[0], "m"):
+    elif not has(values[0], "pt") or not has(values[0], "eta") or not has(values[0], "phi") or not (has(values[0], "energy") or has(values[0], "mass")):
         return False
     else:
         return expression
 
-def is_ptetaphiE(values, expression):
-    if len(values) == 0:
-        return False
-    elif not hasattr(values[0], "pt") and hasattr(values[0], "eta") and hasattr(values[0], "phi") and hasattr(values[0], "E"):
-        return False
+def mass2energy(data):
+    out = copy.copy(data)
+    mass = get(out, "mass")
+    if has(out, "px") and has(out, "py") and has(out, "pz"):
+        px = get(out, "px")
+        py = get(out, "py")
+        pz = get(out, "pz")
+    elif has(out, "pt") and has(out, "eta") and has(out, "phi"):
+        pt = get(out, "pt")
+        eta = get(out, "eta")
+        phi = get(out, "phi")
+        px = pt * math.cos(phi)
+        py = pt * math.sin(phi)
+        pz = pt * math.sinh(eta)
     else:
-        return expression
+        assert False
+    energy = math.sqrt(px**2 + py**2 + pz**2 + mass**2*(1 if mass >= 0 else -1))
+    try:
+        out.energy = energy
+    except:
+        out["energy"] = energy
+    return out
 
-def is_ptetaphim(values, expression):
-    if len(values) == 0:
-        return False
-    elif not hasattr(values[0], "pt") and hasattr(values[0], "eta") and hasattr(values[0], "phi") and hasattr(values[0], "m"):
-        return False
+def cylindrical2cartesian(data):
+    out = copy.copy(data)
+    pt = get(out, "pt")
+    eta = get(out, "eta")
+    phi = get(out, "phi")
+    px = pt * math.cos(phi)
+    py = pt * math.sin(phi)
+    pz = pt * math.sinh(eta)
+    try:
+        out.px = px
+        out.py = py
+        out.pz = pz
+    except:
+        out["px"] = px
+        out["py"] = py
+        out["pz"] = pz
+    return out
+
+def cartesian2cylindrical(data):
+    out = copy.copy(data)
+    px = get(out, "px")
+    py = get(out, "py")
+    pz = get(out, "pz")
+    theta = math.atan2(math.sqrt(px**2 + py**2), pz)
+    pt = math.sqrt(px**2 + py**2)
+    eta = -math.log((1.0 - math.cos(theta)) / (1.0 + math.cos(theta)))/2.0
+    phi = math.atan2(py, px)
+    try:
+        out.pt = pt
+        out.eta = eta
+        out.phi = phi
+    except:
+        out["pt"] = pt
+        out["eta"] = eta
+        out["phi"] = phi
+    return out
+
+def pxpy2phi(data):
+    out = copy.copy(data)
+    px = get(out, "px")
+    py = get(out, "py")
+    phi = math.atan2(py, px)
+    try:
+        out.phi = phi
+    except:
+        out["phi"] = phi
+    return out
+
+def ensure_pxpypzE(data, expression):
+    if has(data, "px") and has(data, "py") and has(data, "pz") and has(data, "energy"):
+        return data
+    elif has(data, "px") and has(data, "py") and has(data, "pz") and has(data, "mass"):
+        return mass2energy(data)
+    elif has(data, "pt") and has(data, "eta") and has(data, "phi") and has(data, "energy"):
+        return cylindrical2cartesian(data)
+    elif has(data, "pt") and has(data, "eta") and has(data, "phi") and has(data, "energy"):
+        return mass2energy(cylindrical2cartesian(data))
     else:
-        return expression
+        raise adl.error.ADLTypeError("value is not a Lorentz vector: {0}".format(data), expression)
 
+def ensure_ptetaphi(data, expression):
+    if has(data, "px") and has(data, "py") and has(data, "pz"):
+        return cartesian2cylindrical(data)
+    elif has(data, "pt") and has(data, "eta") and has(data, "phi"):
+        return data
+    else:
+        raise adl.error.ADLTypeError("value is not a Lorentz vector: {0}".format(data), expression)
 
+def ensure_phi(data, expression):
+    if has(data, "px") and has(data, "py"):
+        return pxpy2phi(data)
+    elif has(data, "phi"):
+        return data
+    else:
+        raise adl.error.ADLTypeError("value is not a Lorentz vector: {0}".format(data), expression)
 
+def pxpypz_members(expression, data, name):
+    px = get(data, "px")
+    py = get(data, "py")
+    pz = get(data, "pz")
 
+    def energy():
+        if has(data, "energy"):
+            return get(data, "energy")
+        else:
+            return mass2energy(data)
 
+    def phi():
+        return math.atan2(py, px)
 
-######################################################### most basic specials last
+    def eta():
+        return -math.log((1.0 - math.cos(theta())) / (1.0 + math.cos(theta())))/2.0
+
+    def mt():
+        mt2 = energy()**2 - pz**2
+        if mt2 >= 0:
+            return math.sqrt(mt2)
+        else:
+            return -math.sqrt(mt2)
+
+    def theta():
+        return math.atan2(math.sqrt(px**2 + py**2), pz)
+
+    def beta():
+        return math.sqrt(px**2 + py**2 + pz**2) / energy()
+
+    def gamma():
+        b = beta()
+        if -1 < b < 1:
+            return (1.0 - b**2)**(-0.5)
+        else:
+            return float("inf")
+
+    def dot(other):
+        other = ensure_pxpypzE(other, expression.arguments[1])
+        return energy()*get(other, "energy") - px*get(other, "px") - py*get(other, "py") - pz*get(other, "pz")
+
+    def delta_phi(other):
+        other = ensure_phi(other, expression.arguments[1])
+        return (phi() - get(other, "phi") + math.pi) % (2*math.pi) - math.pi
+
+    def delta_r(other):
+        other = ensure_ptetaphi(other, expression.arguments[1])
+        return math.sqrt(delta_phi(other)**2 + (eta() - get(other, "eta"))**2)
+
+    if   name == "px":        return px
+    elif name == "py":        return py
+    elif name == "pz":        return pz
+    elif name == "energy":    return energy()
+    elif name == "eta":       return eta()
+    elif name == "phi":       return phi()
+    elif name == "mass":      return get(data, "mass") if has(data, "mass") else math.sqrt(energy()**2 - px**2 - py**2 - pz**2)
+    elif name == "p":         return math.sqrt(px**2 + py**2 + pz**2)
+    elif name == "pt":        return math.sqrt(px**2 + py**2)
+    elif name == "Et":        return energy() * math.sqrt(px**2 + py**2) / math.sqrt(px**2 + py**2 + pz**2)
+    elif name == "mt":        return mt()
+    elif name == "theta":     return theta()
+    elif name == "rapidity":  return math.log((energy() + pz) / (energy() - pz)) / 2.0
+    elif name == "beta":      return beta()
+    elif name == "gamma":     return gamma()
+    elif name == "dot":       return dot
+    elif name == "delta_phi": return delta_phi
+    elif name == "delta_r":   return delta_r
+    else:
+        raise adl.error.ADLTypeError("Lorentz vectors do not have a member named {0}".format(repr(name)), expression)
+
+def ptetaphi_members(expression, data, name):
+    pt = get(data, "pt")
+    eta = get(data, "eta")
+    phi = get(data, "phi")
+
+    def energy():
+        if has(data, "energy"):
+            return get(data, "energy")
+        else:
+            return mass2energy(data)
+
+    def mt():
+        mt2 = energy() - (pt * math.sinh(eta))**2
+        if mt2 >= 0:
+            return math.sqrt(mt2)
+        else:
+            return -math.sqrt(mt2)
+
+    def rapidity():
+        E = energy()
+        pz = pt * math.sinh(eta)
+        return math.log((E + pz) / (E - pz)) / 2.0
+
+    def beta():
+        return pt * math.cosh(eta) / energy()   # FIXME: not checked
+
+    def gamma():
+        b = beta()
+        if -1 < b < 1:
+            return (1.0 - b**2)**(-0.5)
+        else:
+            return float("inf")
+
+    def dot(other):
+        self = ensure_pxpypzE(data, expression.arguments[0])
+        other = ensure_pxpypzE(other, expression.arguments[1])
+        return get(self, "energy")*get(other, "energy") - get(self, "px")*get(other, "px") - get(self, "py")*get(other, "py") - get(self, "pz")*get(other, "pz")
+
+    def delta_phi(other):
+        other = ensure_phi(other, expression.arguments[1])
+        return (phi - get(other, "phi") + math.pi) % (2*math.pi) - math.pi
+
+    def delta_r(other):
+        other = ensure_ptetaphi(other, expression.arguments[1])
+        return math.sqrt(delta_phi(other)**2 + (eta - get(other, "eta"))**2)
+
+    if   name == "px":        return pt * math.cos(phi)
+    elif name == "py":        return pt * math.sin(phi)
+    elif name == "pz":        return pt * math.sinh(eta)
+    elif name == "energy":    return energy()
+    elif name == "eta":       return eta
+    elif name == "phi":       return phi
+    elif name == "mass":      return get(data, "mass") if has(data, "mass") else math.sqrt(energy()**2 - px**2 - py**2 - pz**2)
+    elif name == "p":         return pt * math.cosh(eta)              # FIXME: not checked
+    elif name == "pt":        return pt
+    elif name == "Et":        return energy() / math.cosh(eta)        # FIXME: not checked
+    elif name == "mt":        return mt()
+    elif name == "theta":     return math.atan2(1.0, math.sinh(eta))  # FIXME: not checked
+    elif name == "rapidity":  return rapidity()
+    elif name == "beta":      return beta()
+    elif name == "gamma":     return gamma()
+    elif name == "dot":       return dot
+    elif name == "delta_phi": return delta_phi
+    elif name == "delta_r":   return delta_r
+    else:
+        raise adl.error.ADLTypeError("Lorentz vectors do not have a member named {0}".format(repr(name)), expression)
+
+Run.special[Attribute].append((is_pxpypz, pxpypz_members))
+Run.special[Attribute].append((is_ptetaphi, ptetaphi_members))
+
+###################################################### syntactical functions
 
 def dodot(obj, attr):
     try:
@@ -854,6 +1100,8 @@ Run.special[Mod]       .append((typerequire(float, float),                   lam
 Run.special[UnaryPlus] .append((typerequire(float),                          lambda x: +x))
 Run.special[UnaryMinus].append((typerequire(float),                          lambda x: -x))
 Run.special[Power]     .append((typerequire(float, float),                   lambda x, y: x**y))
+
+###################################################### builtin mathematical functions
 
 # constants (just pi; `e` is too easily confused with user-defined variables, and it's `exp(1)`)
 Run.builtins["pi"] = math.pi

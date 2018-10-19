@@ -339,3 +339,14 @@ class Test(unittest.TestCase):
         run = adl.interpreter.Run("y := x.map(xi => xi**2)")
         assert run(x=[[], [1], [2, 3], [4, 5, 6]])["y"] == [[], [1], [4, 9], [16, 25, 36]]
 
+    def test_lorentz_1(self):
+        run = adl.interpreter.Run("b := a.pt")
+        assert run(a={"px": 3, "py": 4, "pz": 0, "energy": 10})["b"] == 5
+
+    def test_lorentz_2(self):
+        run = adl.interpreter.Run("b := a.dot(a)")
+        assert run(a={"px": 3, "py": 4, "pz": 0, "energy": 10})["b"] == 75
+
+    def test_lorentz_3(self):
+        run = adl.interpreter.Run("b := a.delta_r(a)")
+        assert run(a={"px": 3, "py": 4, "pz": 0, "energy": 10})["b"] == 0

@@ -341,35 +341,6 @@ class Collect(Statement):
         if not topdown:
             yield self
 
-class Variation(AST):
-    def __init__(self, name, assignments, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-        super(Variation, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-        self.name = name
-        self.assignments = assignments
-
-    def __repr__(self):
-        return "{0}({1}, {2})".format(type(self).__name__, repr(self.name), repr(self.assignments))
-
-    def children(self):
-        return [self.name] + self.assignments
-
-    def leftmost(self):
-        return self.name.leftmost()
-
-    def rightmost(self):
-        return self.assignments[-1].rightmost()
-
-    def walk(self, topdown=True):
-        if topdown:
-            yield self
-        for x in self.name.walk(topdown=topdown):
-            yield x
-        for x in self.assignments:
-            for y in x.walk(topdown=topdown):
-                yield y
-        if not topdown:
-            yield self
-
 class For(Statement):
     def __init__(self, loopvars, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(For, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
@@ -395,6 +366,35 @@ class For(Statement):
             for y in x.walk(topdown=topdown):
                 yield y
         for x in self.block:
+            for y in x.walk(topdown=topdown):
+                yield y
+        if not topdown:
+            yield self
+
+class Variation(AST):
+    def __init__(self, name, assignments, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+        super(Variation, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
+        self.name = name
+        self.assignments = assignments
+
+    def __repr__(self):
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.name), repr(self.assignments))
+
+    def children(self):
+        return [self.name] + self.assignments
+
+    def leftmost(self):
+        return self.name.leftmost()
+
+    def rightmost(self):
+        return self.assignments[-1].rightmost()
+
+    def walk(self, topdown=True):
+        if topdown:
+            yield self
+        for x in self.name.walk(topdown=topdown):
+            yield x
+        for x in self.assignments:
             for y in x.walk(topdown=topdown):
                 yield y
         if not topdown:

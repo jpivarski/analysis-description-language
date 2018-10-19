@@ -333,5 +333,4 @@ class Test(unittest.TestCase):
     def test_count_nested_for(self):
         run = adl.interpreter.Run("for xi in x { count 'stuff' }")
         run(x=[[], [1], [2, 3], [4, 5, 6]])
-        print(run["stuff"])
-
+        assert float(run["stuff"]) == 6

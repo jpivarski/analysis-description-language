@@ -381,19 +381,19 @@ class Variation(AST):
             yield self
 
 class For(Statement):
-    def __init__(self, inclusions, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+    def __init__(self, loopvars, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(For, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-        self.inclusions = inclusions
+        self.loopvars = loopvars
         self.block = block
 
     def __repr__(self):
-        return "{0}({1}, {2})".format(type(self).__name__, repr(self.inclusions), repr(self.block))
+        return "{0}({1}, {2})".format(type(self).__name__, repr(self.loopvars), repr(self.block))
 
     def children(self):
-        return self.inclusions + self.block
+        return self.loopvars + self.block
     
     def leftmost(self):
-        return self.inclusions[0].leftmost()
+        return self.loopvars[0].leftmost()
 
     def rightmost(self):
         return self.block[-1].rightmost()
@@ -401,7 +401,7 @@ class For(Statement):
     def walk(self, topdown=True):
         if topdown:
             yield self
-        for x in self.inclusions:
+        for x in self.loopvars:
             for y in x.walk(topdown=topdown):
                 yield y
         for x in self.block:

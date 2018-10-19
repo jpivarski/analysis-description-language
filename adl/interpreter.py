@@ -48,12 +48,12 @@ def calculate(expression, symboltable):
         def function(*values):
             if len(parameters) != len(values):
                 raise adl.error.ADLTypeError("wrong number of arguments: expecting {0}, encountered {1}".format(len(parameters), len(values)), expression)
-            symbols = SymbolTable(frozen)
+            subtable = SymbolTable(frozen)
             for param, val in zip(parameters, values):
-                symbols[Identifier(param)] = val
+                subtable[Identifier(param)] = val
             for stmt in expression.body[:-1]:
-                handle(stmt, source, symbols, aggregation)
-            return calculate(expression.body[-1], symbols)
+                handle(stmt, source, subtable, aggregation)
+            return calculate(expression.body[-1], subtable)
 
         return function
 
@@ -71,12 +71,12 @@ def handle(statement, source, symboltable, aggregation):
         def function(*values):
             if len(parameters) != len(values):
                 raise TypeError("wrong number of arguments: expecting {0}, encountered {1}".format(len(parameters), len(values)))
-            symbols = SymbolTable(frozen)
+            subtable = SymbolTable(frozen)
             for param, val in zip(parameters, values):
-                symbols[Identifier(param)] = val
+                subtable[Identifier(param)] = val
             for stmt in statement.body[:-1]:
-                handle(stmt, source, symbols, aggregation)
-            return calculate(statement.body[-1], symbols)
+                handle(stmt, source, subtable, aggregation)
+            return calculate(statement.body[-1], subtable)
 
         symboltable[statement.target.function] = function
         symboltable.tagfunction(statement.target.function)
@@ -89,26 +89,31 @@ def handle(statement, source, symboltable, aggregation):
         aggregation[statement.name.value].fill(symboltable, weight)
 
     elif isinstance(statement, For):
-        raise NotImplementedError
+        loopvars = []
+        lengths = []
+        for loopvar in statement.loopvars:
+            loopvars.append((loopvar.target, calculate(loopvar.expression, symboltable)))
+            try:
+                lengths.append(len(loopvars[-1][1]))
+            except TypeError:
+                raise adl.errors.ADLTypeError("loop variable {0} must be iterable with a known length".format(repr(loopvar.target.name)), loopvar)
 
-        HERE
+        if not all(x == lengths[0] for x in lengths):
+            raise adl.errors.ADLTypeError("loop variables in the same for loop must all have the same length", statement)
 
-        lists = {}
-        for inclusion in statement.inclusions:
-            lists[inclusion.target.name] = calculate(inclusion.expression)
-
-        for loop:
+        for i in range(lengths[0]):
             subtable = SymbolTable(symboltable)
-
-
-
+            for target, value in loopvars:
+                subtable[target] = value[i]
+            for x in statement.block:
+                handle(x, source, subtable, aggregation)
 
     elif isinstance(statement, Vary):
         for variation in statement.variations:
             subtable = SymbolTable(symboltable)
             subaggregation = aggregation[variation.name.value]
             for x in variation.assignments:
-                handle(x, source, subtable, subaggregation)
+                subtable[x.target] = calculate(x.expression, symboltable)
             for x in statement.block:
                 handle(x, source, subtable, subaggregation)
 
@@ -161,6 +166,10 @@ def initialize(statement, name, aggregation):
         for axis in statement.axes[::-1]:
             storage = Binning.binning(name, axis.binning, axis.expression, storage)
         aggregation[statement.name.value] = storage
+
+    elif isinstance(statement, For):
+        for x in statement.block:
+            initialize(x, name, aggregation)
 
     elif isinstance(statement, Vary):
         storage = Namespace(name)

@@ -81,28 +81,28 @@ class ADLParser(object):
     ###################################################### for
 
     def p_for(self, p):
-        "for : FOR inclusions OPENCURLY block CLOSECURLY"
+        "for : FOR loopvars OPENCURLY block CLOSECURLY"
         #        1           2         3     4          5
         p[0] = adl.syntaxtree.For(p[2], p[4], **self.pos(p, 1))
 
-    def p_inclusions(self, p):
-        "inclusions : inclusion"
+    def p_loopvars(self, p):
+        "loopvars : loopvar"
         #                     1
         p[0] = [p[1]]
 
-    def p_inclusions_extend(self, p):
-        "inclusions : inclusions inclusion"
+    def p_loopvars_extend(self, p):
+        "loopvars : loopvars loopvar"
         #                        1       2
         self.require_separator(p[1][-1], p[2])
         p[0] = p[1] + [p[2]]
 
-    def p_inclusions_extend_semi(self, p):
-        "inclusions : inclusions SEMICOLON inclusion"
+    def p_loopvars_extend_semi(self, p):
+        "loopvars : loopvars SEMICOLON loopvar"
         #                        1         2       3
         p[0] = p[1] + [p[3]]
 
-    def p_inclusion(self, p):
-        "inclusion : IDENTIFIER IN expression"
+    def p_loopvar(self, p):
+        "loopvar : IDENTIFIER IN expression"
         p[0] = adl.syntaxtree.Define(adl.syntaxtree.Identifier(p[1], **self.pos(p, 1)), p[3], **self.pos(p, 2))
 
     ###################################################### vary

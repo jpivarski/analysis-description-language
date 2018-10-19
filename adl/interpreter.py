@@ -175,8 +175,8 @@ def handle(statement, source, symboltable, aggregation):
     elif isinstance(statement, Region):
         for namepredicate in statement.namepredicates:
             accept = calculate(namepredicate.predicate, symboltable)
-            if accept is not True and accept is not False:
-                raise adl.error.ADLTypeError("predicate returned a non-boolean: {0}".format(accept), statement.predicate)
+            if not isinstance(accept, (bool, numpy.bool_, numpy.bool)):
+                raise adl.error.ADLTypeError("predicate returned a non-boolean: {0}".format(accept), namepredicate.predicate)
 
             if accept:
                 subaggregation = aggregation[namepredicate.name.value]
@@ -185,21 +185,6 @@ def handle(statement, source, symboltable, aggregation):
                 symboltable = SymbolTable(symboltable)
                 for x in statement.block:
                     handle(x, source, symboltable, subaggregation)
-
-        # if statement.predicate is None:
-        #     accept = True
-        # else:
-        #     accept = calculate(statement.predicate, symboltable)
-        #     if accept is not True and accept is not False:
-        #         raise adl.error.ADLTypeError("predicate returned a non-boolean: {0}".format(accept), statement.predicate)
-
-        # if accept:
-        #     aggregation = aggregation[statement.name.value]
-        #     for i in range(len(statement.axes)):
-        #         aggregation = aggregation.which(symboltable)
-        #     symboltable = SymbolTable(symboltable)
-        #     for x in statement.block:
-        #         handle(x, source, symboltable, aggregation)
 
     elif isinstance(statement, Source):
         if source is None:
@@ -235,16 +220,6 @@ def initialize(statement, name, aggregation):
             for axis in statement.axes[::-1]:
                 storage = Binning.binning(subname, axis.binning, axis.expression, storage)
             aggregation[namepredicate.name.value] = storage
-            
-        # adl.util.check_name(statement, aggregation)
-        # name = name + (statement.name.value,)
-        # storage = Namespace(name)
-        # for x in statement.block:
-        #     initialize(x, name, storage)
-
-        # for axis in statement.axes[::-1]:
-        #     storage = Binning.binning(name, axis.binning, axis.expression, storage)
-        # aggregation[statement.name.value] = storage
 
     elif isinstance(statement, For):
         for x in statement.block:
@@ -445,7 +420,7 @@ class Fraction(Storage):
 
     def fill(self, symboltable, weight):
         x = calculate(self.expression, symboltable)
-        if x is not True and x is not False:
+        if not isinstance(x, (bool, numpy.bool_, numpy.bool)):
             raise adl.error.ADLTypeError("predicate returned a non-boolean: {0}".format(x), self.expression)
         if x:
             self.numerw += weight

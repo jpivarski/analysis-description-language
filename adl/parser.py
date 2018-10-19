@@ -131,12 +131,18 @@ class ADLParser(object):
     def p_variations_extend(self, p):
         "variations : namedassignments variations"
         #                            1          2
+        self.require_separator(p[1][-1].assignments[-1], p[2][0])
         p[0] = [p[1]] + p[2]
 
+    def p_variations_extend_semi(self, p):
+        "variations : namedassignments SEMICOLON variations"
+        #                            1         2          3
+        p[0] = [p[1]] + p[3]
+
     def p_namedassignments(self, p):
-        "namedassignments : string onlyassignment"
-        #                        1          2
-        p[0] = adl.syntaxtree.Variation(p[1], [p[2]], **self.pos(p, 1))
+        "namedassignments : string COLON onlyassignment"
+        #                        1     2              3
+        p[0] = adl.syntaxtree.Variation(p[1], [p[3]], **self.pos(p, 1))
 
     def p_namedassignments_extend(self, p):
         "namedassignments : namedassignments onlyassignment"

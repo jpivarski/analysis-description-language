@@ -28,7 +28,7 @@ def calculate(expression, symboltable):
                     if accept is True:
                         return function(*values)
                     elif isinstance(accept, Expression):
-                        return function(accept, symboltable, *values)
+                        return function(accept, *values)
                 except Exception as err:
                     if isinstance(err, adl.error.ADLError):
                         raise
@@ -741,7 +741,7 @@ def islist(values, expression):
         else:
             return expression
 
-def listfunctions(expression, symboltable, data, name):
+def listfunctions(expression, data, name):
     if name == "map":
         return lambda inline: [inline(x) for x in data]
 
@@ -760,10 +760,73 @@ def listfunctions(expression, symboltable, data, name):
     elif name == "distincts":
         return lambda: [(data[i], data[j]) for i in range(len(data)) for j in range(i + 1, len(data))]
 
+    elif name == "min":
+        if len(data) == 0:
+            return lambda: float("inf")
+        else:
+            return lambda: min(data)
+
+    elif name == "max":
+        if len(data) == 0:
+            return lambda: float("-inf")
+        else:
+            return lambda: max(data)
+
+    elif name == "minby":
+        if len(data) == 0:
+            return lambda f: []
+        else:
+            return lambda f: [min(data, key=f)]
+
+    elif name == "maxby":
+        if len(data) == 0:
+            return lambda f: []
+        else:
+            return lambda f: [max(data, key=f)]
+
     else:
         raise adl.error.ADLTypeError("lists do not have a method named {0}".format(repr(name)), expression)
 
 Run.special[Attribute].append((islist, listfunctions))
+
+def is_pxpypzE(values, expression):
+    if len(values) == 0:
+        return False
+    elif not hasattr(values[0], "px") and hasattr(values[0], "py") and hasattr(values[0], "pz") and hasattr(values[0], "E"):
+        return False
+    else:
+        return expression
+
+def is_pxpypzm(values, expression):
+    if len(values) == 0:
+        return False
+    elif not hasattr(values[0], "px") and hasattr(values[0], "py") and hasattr(values[0], "pz") and hasattr(values[0], "m"):
+        return False
+    else:
+        return expression
+
+def is_ptetaphiE(values, expression):
+    if len(values) == 0:
+        return False
+    elif not hasattr(values[0], "pt") and hasattr(values[0], "eta") and hasattr(values[0], "phi") and hasattr(values[0], "E"):
+        return False
+    else:
+        return expression
+
+def is_ptetaphim(values, expression):
+    if len(values) == 0:
+        return False
+    elif not hasattr(values[0], "pt") and hasattr(values[0], "eta") and hasattr(values[0], "phi") and hasattr(values[0], "m"):
+        return False
+    else:
+        return expression
+
+
+
+
+
+
+######################################################### most basic specials last
 
 def dodot(obj, attr):
     try:

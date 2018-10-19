@@ -120,26 +120,6 @@ class Literal(Expression):
     def __repr__(self):
         return "{0}({1})".format(type(self).__name__, repr(self.value))
 
-# class LiteralList(Expression):
-#     def __init__(self, value, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
-#         super(Literal, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-#         self.value = value
-
-#     def __repr__(self):
-#         return "{0}({1})".format(type(self).__name__, repr(self.value))
-
-#     def walk(self, topdown=True):
-#         if topdown:
-#             yield self
-#         for x in self.value:
-#             for y in x.walk(topdown=topdown):
-#                 yield y
-#         if not topdown:
-#             yield self
-
-#     def children(self):
-#         return list(self.value)
-
 class Identifier(Expression):
     def __init__(self, name, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Identifier, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)

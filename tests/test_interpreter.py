@@ -152,36 +152,42 @@ class Test(unittest.TestCase):
         assert "y" not in run("B", x=[1, 2, 3])
 
     def test_region_scope(self):
-        run = adl.interpreter.Run("region 'stuff' { y := x }")
+        run = adl.interpreter.Run("region 'stuff': true { y := x }")
         assert "y" not in run(x=[1, 2, 3])
 
-        run = adl.interpreter.Run("region 'stuff' p { y := x }")
+        run = adl.interpreter.Run("region 'stuff': p { y := x }")
         assert "y" not in run(x=[1, 2, 3], p=[True, False, True])
 
     def test_region_count(self):
-        run = adl.interpreter.Run("region 'stuff' { count 'thingy' }")
+        run = adl.interpreter.Run("region 'stuff': true { count 'thingy' }")
         run(x=[1, 2, 3])
         assert float(run["stuff", "thingy"]) == 3
 
+    def test_regions_count(self):
+        run = adl.interpreter.Run("region 'one': true ; 'two': false { count 'thingy' }")
+        run(x=[1, 2, 3])
+        assert float(run["one", "thingy"]) == 3
+        assert float(run["two", "thingy"]) == 0
+
     def test_region_count_predicate(self):
-        run = adl.interpreter.Run("region 'stuff' p { count 'thingy' }")
+        run = adl.interpreter.Run("region 'stuff': p { count 'thingy' }")
         run(x=[1, 2, 3], p=[True, False, True])
         assert float(run["stuff", "thingy"]) == 2
 
     def test_region_count_binning(self):
-        run = adl.interpreter.Run("region 'stuff' by regular(2, 0.0, 4.0) <- x { count 'thingy' }")
+        run = adl.interpreter.Run("region 'stuff': true by regular(2, 0.0, 4.0) <- x { count 'thingy' }")
         run(x=[1, 2, 3])
         assert float(run["stuff", 0, "thingy"]) == 1
         assert float(run["stuff", 1, "thingy"]) == 2
 
     def test_region_count_predicate_binning(self):
-        run = adl.interpreter.Run("region 'stuff' p by regular(2, 0.0, 4.0) <- x { count 'thingy' }")
+        run = adl.interpreter.Run("region 'stuff': p by regular(2, 0.0, 4.0) <- x { count 'thingy' }")
         run(x=[1, 2, 3], p=[True, False, True])
         assert float(run["stuff", 0, "thingy"]) == 1
         assert float(run["stuff", 1, "thingy"]) == 1
 
     def test_region_region_count(self):
-        run = adl.interpreter.Run("region 'stuff' p { region 'thingy' by regular(2, 0.0, 4.0) <- x { count 'wow' } }")
+        run = adl.interpreter.Run("region 'stuff': p { region 'thingy': true by regular(2, 0.0, 4.0) <- x { count 'wow' } }")
         run(x=[1, 2, 3], p=[True, False, True])
         assert float(run["stuff", "thingy", 0, "wow"]) == 1
         assert float(run["stuff", "thingy", 1, "wow"]) == 1

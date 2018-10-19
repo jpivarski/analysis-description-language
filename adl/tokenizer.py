@@ -8,7 +8,9 @@ import ply.lex
 import adl.error
 
 class ADLLexer(object):
-    reserved = {"and":      "AND",
+    reserved = {"true":     "TRUE",
+                "false":    "FALSE",
+                "and":      "AND",
                 "or":       "OR",
                 "not":      "NOT",
                 "by":       "BY",
@@ -24,8 +26,8 @@ class ADLLexer(object):
                 "source":   "SOURCE"}
 
     tokens = ["MULTILINESTRING", "STRING", "FLOAT_NUMBER", "DEC_NUMBER", "IDENTIFIER",
-              "COLONEQ", "LEFTARROW", "RIGHTARROW",
-              "OR", "AND", "NOT", "BY", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "FOR", "IN", "VARY", "REGION", "SOURCE",
+              "COLONEQ", "LEFTARROW", "RIGHTARROW", "COLON",
+              "TRUE", "FALSE", "AND", "OR", "NOT", "BY", "COUNT", "SUM", "PROFILE", "FRACTION", "WEIGHT", "FOR", "IN", "VARY", "REGION", "SOURCE",
               "EQEQUAL", "NOTEQUAL", "LESSEQ", "LESS", "GREATEREQ", "GREATER",
               "PLUS", "MINUS", "TIMES", "DIV", "MOD", "POWER",
               "OPENPAREN", "CLOSEPAREN", "OPENBRACKET", "CLOSEBRACKET", "OPENCURLY", "CLOSECURLY", "DOT", "COMMA",
@@ -60,6 +62,7 @@ class ADLLexer(object):
     t_COLONEQ      = r":="
     t_LEFTARROW    = r"<-"
     t_RIGHTARROW   = r"=>"
+    t_COLON        = r":"
     t_OR           = r"or"
     t_AND          = r"and"
     t_NOT          = r"not"

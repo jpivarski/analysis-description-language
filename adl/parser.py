@@ -59,46 +59,57 @@ class ADLParser(object):
     ###################################################### region
 
     def p_region(self, p):
-        "region : REGION string OPENCURLY block CLOSECURLY"
-        #              1      2         3     4          5
-        p[0] = adl.syntaxtree.Region(p[2], None, [], p[4], **self.pos(p, 1))
-
-    def p_region_predicate(self, p):
-        "region : REGION string expression OPENCURLY block CLOSECURLY"
-        #              1      2          3         4     5          6
-        p[0] = adl.syntaxtree.Region(p[2], p[3], [], p[5], **self.pos(p, 1))
+        "region : REGION namepredicates OPENCURLY block CLOSECURLY"
+        #              1              2         3     4          5
+        p[0] = adl.syntaxtree.Region(p[2], [], p[4], **self.pos(p, 1))
 
     def p_region_axis(self, p):
-        "region : REGION string BY axis OPENCURLY block CLOSECURLY"
-        #              1      2  3    4         5     6          7
-        p[0] = adl.syntaxtree.Region(p[2], None, p[4], p[6], **self.pos(p, 1))
+        "region : REGION namepredicates BY axis OPENCURLY block CLOSECURLY"
+        #              1              2  3    4         5     6          7
+        p[0] = adl.syntaxtree.Region(p[2], p[4], p[6], **self.pos(p, 1))
 
-    def p_region_predicate_axis(self, p):
-        "region : REGION string expression BY axis OPENCURLY block CLOSECURLY"
-        #              1      2          3  4    5         6     7          8
-        p[0] = adl.syntaxtree.Region(p[2], p[3], p[5], p[7], **self.pos(p, 1))
+    def p_namepredicates(self, p):
+        "namepredicates : namepredicate"
+        #                             1
+        p[0] = [p[1]]
+
+    def p_namepredicates_extend(self, p):
+        "namepredicates : namepredicates namepredicate"
+        #                             1              2
+        self.require_separator(p[1][-1], p[2])
+        p[0] = p[1] + [p[2]]
+
+    def p_namepredicates_extend_semi(self, p):
+        "namepredicates : namepredicates SEMICOLON namepredicate"
+        #                             1          2             3
+        p[0] = p[1] + [p[3]]
+
+    def p_namepredicate(self, p):
+        "namepredicate : string COLON expression"
+        #                     1     2          3
+        p[0] = adl.syntaxtree.NamePredicate(p[1], p[3], **self.pos(p, 1))
 
     ###################################################### for
 
     def p_for(self, p):
         "for : FOR loopvars OPENCURLY block CLOSECURLY"
-        #        1           2         3     4          5
+        #        1        2         3     4          5
         p[0] = adl.syntaxtree.For(p[2], p[4], **self.pos(p, 1))
 
     def p_loopvars(self, p):
         "loopvars : loopvar"
-        #                     1
+        #                 1
         p[0] = [p[1]]
 
     def p_loopvars_extend(self, p):
         "loopvars : loopvars loopvar"
-        #                        1       2
+        #                  1       2
         self.require_separator(p[1][-1], p[2])
         p[0] = p[1] + [p[2]]
 
     def p_loopvars_extend_semi(self, p):
         "loopvars : loopvars SEMICOLON loopvar"
-        #                        1         2       3
+        #                  1         2       3
         p[0] = p[1] + [p[3]]
 
     def p_loopvar(self, p):
@@ -678,6 +689,16 @@ class ADLParser(object):
         "atom : DEC_NUMBER"
         #                1
         p[0] = adl.syntaxtree.Literal(p[1], **self.pos(p, 1))
+
+    def p_atom_literal_true(self, p):
+        "atom : TRUE"
+        #          1
+        p[0] = adl.syntaxtree.Literal(True, **self.pos(p, 1))
+
+    def p_atom_literal_false(self, p):
+        "atom : FALSE"
+        #           1
+        p[0] = adl.syntaxtree.Literal(False, **self.pos(p, 1))
 
     def p_atom_identifier(self, p):
         "atom : IDENTIFIER"

@@ -1013,13 +1013,23 @@ def pxpypz_members(expression, data, name):
         other = ensure_ptetaphi(other, expression.arguments[1])
         return math.sqrt(delta_phi(other)**2 + (eta() - get(other, "eta"))**2)
 
+    def mass():
+        if has(data, "mass"):
+            return get(data, "mass")
+        else:
+            mass2 = energy()**2 - px**2 - py**2 - pz**2
+            if mass2 >= 0:
+                return math.sqrt(mass2)
+            else:
+                return float("nan")
+
     if   name == "px":        return px
     elif name == "py":        return py
     elif name == "pz":        return pz
     elif name == "energy":    return energy()
     elif name == "eta":       return eta()
     elif name == "phi":       return phi()
-    elif name == "mass":      return get(data, "mass") if has(data, "mass") else math.sqrt(energy()**2 - px**2 - py**2 - pz**2)
+    elif name == "mass":      return mass()
     elif name == "p":         return math.sqrt(px**2 + py**2 + pz**2)
     elif name == "pt":        return math.sqrt(px**2 + py**2)
     elif name == "Et":        return energy() * math.sqrt(px**2 + py**2) / math.sqrt(px**2 + py**2 + pz**2)
@@ -1103,6 +1113,31 @@ def ptetaphi_members(expression, data, name):
 
 Run.special[Attribute].append((is_pxpypz, pxpypz_members))
 Run.special[Attribute].append((is_ptetaphi, ptetaphi_members))
+
+def pxpypz_plus(expression, left, right):
+    left = ensure_pxpypzE(left, expression.arguments[0])
+    right = ensure_pxpypzE(right, expression.arguments[1])
+
+    px = get(left, "px") + get(right, "px")
+    py = get(left, "py") + get(right, "py")
+    pz = get(left, "pz") + get(right, "pz")
+    energy = get(left, "energy") + get(right, "energy")
+
+    out = copy.copy(left)
+    try:
+        out.px = px
+        out.py = py
+        out.pz = pz
+        out.energy = energy
+    except:
+        out["px"] = px
+        out["py"] = py
+        out["pz"] = pz
+        out["energy"] = energy
+    return out
+
+Run.special[Plus].append((is_pxpypz, pxpypz_plus))
+Run.special[Plus].append((is_ptetaphi, pxpypz_plus))
 
 ###################################################### syntactical functions
 

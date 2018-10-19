@@ -744,6 +744,22 @@ def islist(values, expression):
 def listfunctions(expression, symboltable, data, name):
     if name == "map":
         return lambda inline: [inline(x) for x in data]
+
+    elif name == "filter":
+        return lambda inline: [x for x in data if inline(x)]
+
+    elif name == "flatten":
+        return lambda: [item for sublist in data for item in sublist]
+
+    elif name == "cross":
+        return lambda other: [x + (y,) if isinstance(x, tuple) else (x, y) for x in data for y in other]
+
+    elif name == "pairs":
+        return lambda: [(data[i], data[j]) for i in range(len(data)) for j in range(i, len(data))]
+
+    elif name == "distincts":
+        return lambda: [(data[i], data[j]) for i in range(len(data)) for j in range(i + 1, len(data))]
+
     else:
         raise adl.error.ADLTypeError("lists do not have a method named {0}".format(repr(name)), expression)
 

@@ -554,6 +554,21 @@ class RegularBinning(Binning):
         else:
             return self.values[int(math.trunc(index))]
 
+    def plot(self):
+        import matplotlib.pyplot
+
+        if isinstance(self.nanflow, Binning):
+            raise NotImplementedError
+
+        else:
+            binwidth = (self.high - self.low) / self.numbins
+            centers = [self.low + (i + 0.5)*binwidth for i in range(self.numbins)]
+            heights = [float(self.values[i]) for i in range(self.numbins)]
+            fig, ax = matplotlib.pyplot.subplots()
+            ax.bar(centers, heights, width=binwidth)
+            ax.set_title(", ".join(repr(x) for x in self.name))
+            return ax
+
 class VariableBinning(Binning):
     def __init__(self, name, expression, edges, storage):
         self.name = name
@@ -610,6 +625,21 @@ class VariableBinning(Binning):
             for i in range(self.numbins):
                 if self.edges[i] <= x < self.edges[i + 1]:
                     return self.values[i]
+
+    def plot(self):
+        import matplotlib.pyplot
+
+        if isinstance(self.nanflow, Binning):
+            raise NotImplementedError
+
+        else:
+            centers = [0.5*(self.edges[i + 1] + self.edges[i]) for i in range(self.numbins)]
+            binwidths = [self.edges[i + 1] - self.edges[i] for i in range(self.numbins)]
+            heights = [float(self.values[i]) for i in range(self.numbins)]
+            fig, ax = matplotlib.pyplot.subplots()
+            ax.bar(centers, heights, width=binwidths)
+            ax.set_title(", ".join(repr(x) for x in self.name))
+            return ax
 
 ###################################################### executable ADL document
 

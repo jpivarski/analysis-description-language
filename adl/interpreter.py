@@ -149,7 +149,7 @@ def handle(statement, source, symboltable, aggregation):
 
 def initialize(statement, name, aggregation):
     if isinstance(statement, Suite):
-        for x in statement.statements:
+        for x in statement.block:
             initialize(x, name, aggregation)
 
     elif isinstance(statement, Source):
@@ -618,10 +618,26 @@ class Run(object):
         initialize(self.ast, (), self.aggregation)
 
     def __iter__(self, source=None, **data):
-        if not isinstance(self.ast.statements[-1], Expression):
-            raise adl.error.ADLTypeError("this ADL file/string ends with a {0}, not an expression; cannot iterate".format(type(self.ast).__name__))
-        for i in range(min(len(x) for x in data.values())):
-            yield self(source=source, **{n: x[i] for n, x in data.items()})
+        functions = {n: x for n, x in data.items() if callable(x)}
+        justdata = {n: x for n, x in data.items() if not callable(x)}
+
+        if len(justdata) == 0:
+            yield {}
+
+        else:
+            try:
+                lengths = [len(x) for x in justdata.values()]
+                assert all(x == lengths[0] for x in lengths)
+
+            except (TypeError, AssertionError):
+                yield self.single(source=source, **data)
+
+            else:
+                for i in range(lengths[0]):
+                    onedata = {n: x[i] for n, x in justdata.items()}
+                    for n, x in functions.items():
+                        onedata[n] = x
+                    yield self.single(source=source, **onedata)
 
     def __call__(self, source=None, **data):
         functions = {n: x for n, x in data.items() if callable(x)}
@@ -630,30 +646,31 @@ class Run(object):
         if len(justdata) == 0:
             return {}
 
-        try:
-            lengths = [len(x) for x in justdata.values()]
-            assert all(x == lengths[0] for x in lengths)
-        except (TypeError, AssertionError):
-            return self.single(source=source, **data)
+        else:
+            try:
+                lengths = [len(x) for x in justdata.values()]
+                assert all(x == lengths[0] for x in lengths)
 
-        out = None
-        for i in range(lengths[0]):
-            onedata = {n: x[i] for n, x in justdata.items()}
-            for n, x in functions.items():
-                onedata[n] = x
+            except (TypeError, AssertionError):
+                return self.single(source=source, **data)
 
-            single = self.single(source=source, **onedata)
-            if out is None:
-                out = {n: [x] for n, x in single.items()}
             else:
-                for n, x in single.items():
-                    out[n].append(x)
-
-        return out
+                out = None
+                for i in range(lengths[0]):
+                    onedata = {n: x[i] for n, x in justdata.items()}
+                    for n, x in functions.items():
+                        onedata[n] = x
+                    single = self.single(source=source, **onedata)
+                    if out is None:
+                        out = {n: [x] for n, x in single.items()}
+                    else:
+                        for n, x in single.items():
+                            out[n].append(x)
+                return out
 
     def single(self, source=None, **data):
         symboltable = SymbolTable.root(self.builtins, data)
-        for statement in self.ast.statements:
+        for statement in self.ast.block:
             handle(statement, source, symboltable, self.aggregation)
         symboltable.dropfunctions()
         return symboltable.symbols

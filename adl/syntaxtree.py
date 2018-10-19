@@ -509,26 +509,26 @@ class Source(Statement):
             yield self
 
 class Suite(AST):
-    def __init__(self, statements, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
+    def __init__(self, block, code=None, lexspan=None, lineno=None, col_offset=None, lineno2=None, col_offset2=None):
         super(Suite, self).__init__(code=code, lexspan=lexspan, lineno=lineno, col_offset=col_offset, lineno2=lineno2, col_offset2=col_offset2)
-        self.statements = statements
+        self.block = block
 
     def __repr__(self):
-        return "{0}({1})".format(type(self).__name__, repr(self.statements))
+        return "{0}({1})".format(type(self).__name__, repr(self.block))
 
     def children(self):
-        return list(self.statements)
+        return list(self.block)
 
     def leftmost(self):
-        return self.statements[0].leftmost()
+        return self.block[0].leftmost()
 
     def rightmost(self):
-        return self.statements[-1].rightmost()
+        return self.block[-1].rightmost()
 
     def walk(self, topdown=True):
         if topdown:
             yield self
-        for x in self.statements:
+        for x in self.block:
             for y in x.walk(topdown=topdown):
                 yield y
         if not topdown:
